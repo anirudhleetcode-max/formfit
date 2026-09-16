@@ -47,8 +47,8 @@ Partial movements, set-up and walk-outs were not counted. The timestamps of the 
 `gt_method` so the count can be re-checked. Every one of these hand counts agreed with the dataset label.
 For the other PushUpBench clips the dataset label is used as is, because the movement was too fast
 or too small to count on a contact sheet. `gt_method` says so for each clip, and the evaluation
-reports a "hand-verified only" subset. Clips where the count was ambiguous (cut edits,
-several people, the exercise mixed with other movements) were either given a `segment` or left out.
+reports a "hand-verified only" subset. Harder conditions (a second person in an inset video, variants such as drop squats or kneeling
+push-ups) were kept and listed under `conditions` rather than filtered out.
 
 No clip has `fault_labels`. Judging form reliably needs a qualified coach, so form accuracy on
 real video is **not measured yet**.

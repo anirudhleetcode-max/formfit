@@ -43,8 +43,8 @@ Excluding the drop-squat clip, the filmed MAE would be 0.2, but that clip is a r
    rep ever completes. The pipeline is built for full-depth squats; a partial-range variant is
    out of scope. The thresholds were **not** changed after seeing this, because that would tune on the test clip.
 2. **The first lunge is missed.** On both lunge clips the first counted rep ends about 3 s after the first
-   visible low (7.3 s vs 4 s, 12.2 s vs 9 s). The state machine has to see the lifter at the top before it arms, and the
-   first rep starts before that happens.
+   visible low (7.3 s vs 4 s, 12.2 s vs 9 s). The likely cause (not yet confirmed) is that the state machine has to see a settled top position
+   before it arms, and the first rep starts right after the avatar starts moving.
 3. **Movement before the set is counted.** On the curl clip, three "reps" were counted at 1.5–4.1 s,
    while the person was still getting ready. All three were abstained from scoring ("Can't see your
    wrists clearly"), so abstention worked, but the count was still off by one overall.
@@ -57,8 +57,8 @@ Excluding the drop-squat clip, the filmed MAE would be 0.2, but that clip is a r
 
 ## Caveats
 
-- Five of the eleven ground truths are PushUpBench labels that I could not confirm from contact
-  sheets (see `gt_method` in the manifest).
+- Six of the eleven ground truths are PushUpBench labels that could not be fully confirmed from contact
+  sheets (one was spot-checked) (see `gt_method` in the manifest).
 - Rendered avatars have clean, stable landmarks, so they flatter pose tracking. The filmed subset is the
   more relevant one, and it has only 6 clips.
 - Wikimedia Commons candidates (kettlebell squats, push-ups, a strict press) are listed in the
