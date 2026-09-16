@@ -209,3 +209,15 @@ def test_fatigue_handles_unscored_reps():
         r["con_s"] += 0.02 * ((i % 3) - 1)
     out = detect_fatigue(reps)
     assert out["detected"] and out["onset_rep"] == 7 and out["slopes"]["score"] == 0.0
+
+
+def test_fatigue_eval_reports_detection_and_false_alarm_rates():
+    """Small version of `python -m ml.eval_fatigue` across exercises (keys are prefixed)."""
+    from ml.eval_fatigue import run
+    res = run({"trials": 40, "exercises": ["squat", "curl"], "seed": 11})
+    assert res["synthetic"] is True
+    assert res["false_alarm_rate"] is not None and res["false_alarm_rate"] <= 0.15
+    # a sudden, large slowdown must be caught most of the time, and the onset located near rep 9
+    assert res["detection_rate"]["sudden_after_rep_8"] >= 0.6
+    assert res["detection_rate"]["sudden_after_rep_8"] > res["false_alarm_rate"]
+    assert res["onset_error"]["squat/sudden_after_rep_8"]["mean_abs_reps"] <= 1.0

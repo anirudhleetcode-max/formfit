@@ -55,8 +55,15 @@ def run(cfg: dict | None = None) -> dict:
                 out["onset_error"][key] = {"mean_abs_reps": round(float(np.mean(onset_err)), 2),
                                            "exact": round(float(np.mean([e == 0 for e in onset_err])), 3)}
             print(f"{key:28s} flagged {hits / cfg['trials']:.1%}")
-    out["false_alarm_rate"] = out["flag_rate"].get("no_fatigue")
+    out["false_alarm_rate"] = _mean_rate(out["flag_rate"], "no_fatigue")
+    out["detection_rate"] = {p: _mean_rate(out["flag_rate"], p) for p in PATTERNS if p != "no_fatigue"}
     return out
+
+
+def _mean_rate(flag_rate: dict, pattern: str) -> float | None:
+    """Average flag rate for one pattern over exercises (keys are `pattern` or `exercise/pattern`)."""
+    vals = [v for k, v in flag_rate.items() if k.split("/")[-1] == pattern]
+    return round(float(np.mean(vals)), 3) if vals else None
 
 
 if __name__ == "__main__":

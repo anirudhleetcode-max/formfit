@@ -1,0 +1,57 @@
+{
+  "synthetic": true,
+  "simulator_version": "1.1",
+  "detector": {
+    "shift_min": 0.12,
+    "t_min": 3.0,
+    "min_reps": 6
+  },
+  "config": {
+    "name": "fatigue_synthetic",
+    "task": "fatigue",
+    "trials": 300,
+    "reps_per_set": 12,
+    "exercises": [
+      "squat",
+      "pushup",
+      "curl"
+    ],
+    "seed": 2024,
+    "tuning_seed": 3,
+    "description": "Fatigue change-point detector on SYNTHETIC 12-rep sets; evaluation seed differs from the tuning seed."
+  },
+  "flag_rate": {
+    "squat/no_fatigue": 0.053,
+    "squat/mild_progressive": 0.267,
+    "squat/strong_progressive": 0.593,
+    "squat/sudden_after_rep_8": 0.81,
+    "pushup/no_fatigue": 0.023,
+    "pushup/mild_progressive": 0.24,
+    "pushup/strong_progressive": 0.537,
+    "pushup/sudden_after_rep_8": 0.77,
+    "curl/no_fatigue": 0.043,
+    "curl/mild_progressive": 0.213,
+    "curl/strong_progressive": 0.54,
+    "curl/sudden_after_rep_8": 0.727
+  },
+  "onset_error": {
+    "squat/sudden_after_rep_8": {
+      "mean_abs_reps": 0.25,
+      "exact": 0.79
+    },
+    "pushup/sudden_after_rep_8": {
+      "mean_abs_reps": 0.37,
+      "exact": 0.693
+    },
+    "curl/sudden_after_rep_8": {
+      "mean_abs_reps": 0.34,
+      "exact": 0.725
+    }
+  },
+  "false_alarm_rate": 0.04,
+  "detection_rate": {
+    "mild_progressive": 0.24,
+    "strong_progressive": 0.557,
+    "sudden_after_rep_8": 0.769
+  }
+}

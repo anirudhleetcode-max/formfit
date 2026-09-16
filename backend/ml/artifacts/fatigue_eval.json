@@ -1,11 +1,38 @@
 {
-  "trials": 300,
-  "reps_per_set": 12,
-  "exercise": "squat",
+  "synthetic": true,
+  "simulator_version": "1.1",
+  "detector": {
+    "shift_min": 0.12,
+    "t_min": 3.0,
+    "min_reps": 6
+  },
+  "config": {
+    "name": "fatigue_synthetic",
+    "task": "fatigue",
+    "trials": 300,
+    "reps_per_set": 12,
+    "exercises": [
+      "squat"
+    ],
+    "seed": 2024,
+    "tuning_seed": 3
+  },
   "flag_rate": {
-    "no_fatigue": 0.057,
-    "mild_progressive": 0.257,
-    "strong_progressive": 0.577,
-    "sudden_after_rep_8": 0.807
+    "no_fatigue": 0.053,
+    "mild_progressive": 0.267,
+    "strong_progressive": 0.593,
+    "sudden_after_rep_8": 0.81
+  },
+  "onset_error": {
+    "sudden_after_rep_8": {
+      "mean_abs_reps": 0.25,
+      "exact": 0.79
+    }
+  },
+  "false_alarm_rate": 0.053,
+  "detection_rate": {
+    "mild_progressive": 0.267,
+    "strong_progressive": 0.593,
+    "sudden_after_rep_8": 0.81
   }
 }
