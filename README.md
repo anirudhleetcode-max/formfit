@@ -390,13 +390,27 @@ already in the card). Monitoring of the share of `out_of_distribution` / `not_sc
 
 ## Deployment
 
-Live demo: not deployed yet.
-Repository: not published yet.
+- **Live demo:** https://formfit-anirudh-ed2c.vercel.app
+- **API:** https://formfit-api-te4h.onrender.com/api/health
+- **Repository:** https://github.com/anirudhleetcode-max/formfit
 
 Production setup: React build on **Vercel** (`frontend/vercel.json` rewrites `/api/*` to the API),
 FastAPI in **Docker on Render** (`render.yaml`, `backend/Dockerfile`), data in **MongoDB Atlas**.
 Step-by-step instructions, environment variables and measured memory use are in
 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+The API runs on Render's **free** instance, which sleeps after ~15 minutes idle: the first request
+after that takes roughly a minute while the container starts. Verified in production on
+2026-09-17: health `ok`, database connected, model loaded, and CORS restricted to the Vercel
+origin above (other origins get no `Access-Control-Allow-Origin` header).
+
+Checked live: sign-up, session creation, and a finished squat session of three reps. Two scored reps
+averaged **73**, and a rep submitted with tracking confidence 0.31 was stored **unscored**
+(`scored: false`, `score: null`) — the low-confidence gate behaves in production as it does in the
+tests. Fatigue detection ran and correctly reported none, since it requires at least 6 reps.
+
+Pose estimation itself runs **in the browser** (MediaPipe), so it is unaffected by the API's free
+instance; video never leaves the machine.
 
 ## Limitations
 
@@ -429,7 +443,7 @@ The e2e runner converts `samples/squat_demo.webm` to `.y4m` with **ffmpeg**, a t
 fake webcam (`--use-fake-device-for-media-stream`). The runner starts the backend on 8003 and `vite preview` on 5175, runs a live
 session and an upload analysis, checks history, progress and the About page, and takes the screenshots. The headless run
 uses `?delegate=cpu`. CI (`.github/workflows/ci.yml`) runs pytest with a MongoDB service plus the frontend unit tests and
-build. It has not been run from this environment.
+build. It runs green on GitHub Actions (44 backend, 54 frontend, build).
 
 Sample video: "Squat - exercise demonstration video" by FitnessScape, CC BY 3.0, via Wikimedia Commons
 (`samples/ATTRIBUTION.md`).
