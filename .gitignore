@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+backend/.env
+
+# Node / build
+node_modules/
+frontend/dist/
+# copied from node_modules by scripts/copy-wasm.mjs
+frontend/public/mediapipe/
+
+# e2e scratch (fake-camera .y4m, server logs)
+e2e/.cache/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

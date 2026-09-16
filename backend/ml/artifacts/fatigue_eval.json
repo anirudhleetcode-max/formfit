@@ -1,0 +1,11 @@
+{
+  "trials": 300,
+  "reps_per_set": 12,
+  "exercise": "squat",
+  "flag_rate": {
+    "no_fatigue": 0.057,
+    "mild_progressive": 0.257,
+    "strong_progressive": 0.577,
+    "sudden_after_rep_8": 0.807
+  }
+}

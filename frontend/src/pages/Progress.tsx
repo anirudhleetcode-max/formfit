@@ -1,0 +1,167 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ScoreTrend, WeeklyBars } from "../components/charts";
+import { api } from "../lib/api";
+import { exLabel, localTz, shortDay } from "../lib/format";
+import type { ModelInfo, Overview } from "../lib/types";
+import { EXERCISE_LIST, type ExerciseId } from "../pose/rules";
+
+const RANGES = [4, 8, 12];
+
+export default function Progress() {
+  const [weeks, setWeeks] = useState(8);
+  const [ex, setEx] = useState<ExerciseId | "">("");
+  const [data, setData] = useState<Overview | null>(null);
+  const [model, setModel] = useState<ModelInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setError(null);
+    api<Overview>(`/api/stats/overview?weeks=${weeks}&tz=${encodeURIComponent(localTz())}`).then(setData).catch((e) => setError(e.message));
+  }, [weeks]);
+  useEffect(() => { api<ModelInfo>("/api/model").then(setModel).catch(() => setModel(null)); }, []);
+
+  const weekly = useMemo(() => (data?.weekly ?? []).map((w) => ({ label: shortDay(w.week), reps: w.reps })), [data]);
+  const trend = useMemo(() => {
+    const days = new Map<string, { s: number; m: number; n: number; mn: number }>();
+    for (const d of data?.daily ?? []) {
+      if (ex && d.exercise !== ex) continue;
+      const k = d.day;
+      const cur = days.get(k) ?? { s: 0, m: 0, n: 0, mn: 0 };
+      cur.s += d.avg_score; cur.n += 1;
+      if (d.avg_model_score !== null) { cur.m += d.avg_model_score; cur.mn += 1; }
+      days.set(k, cur);
+    }
+    return [...days.entries()].map(([k, v]) => ({
+      label: shortDay(k), score: Math.round(v.s / v.n), model: v.mn ? Math.round(v.m / v.mn) : null,
+    }));
+  }, [data, ex]);
+  const faults = useMemo(() => {
+    const agg = new Map<string, { label: string; count: number }>();
+    for (const f of data?.faults ?? []) {
+      if (ex && f.exercise !== ex) continue;
+      const cur = agg.get(f.label) ?? { label: f.label, count: 0 };
+      cur.count += f.count;
+      agg.set(f.label, cur);
+    }
+    return [...agg.values()].sort((a, b) => b.count - a.count).slice(0, 7);
+  }, [data, ex]);
+  const maxFault = Math.max(1, ...faults.map((f) => f.count));
+  const t = data?.totals;
+
+  return (
+    <div className="page progress">
+      <header className="page-head">
+        <div>
+          <h1>Progress</h1>
+          <p className="sub">Volume, form quality and recurring faults over the last {weeks} weeks.</p>
+        </div>
+        <div className="seg small" role="radiogroup" aria-label="Range">
+          {RANGES.map((w) => (
+            <button key={w} role="radio" aria-checked={weeks === w} className={"seg-btn" + (weeks === w ? " on" : "")} onClick={() => setWeeks(w)}>{w}w</button>
+          ))}
+        </div>
+      </header>
+      {error && <p className="alert" role="alert">{error}</p>}
+      {!data && !error && <p className="muted">Loading…</p>}
+
+      {data && t && t.sessions === 0 && (
+        <div className="empty panel">
+          <p>Nothing to chart yet.</p>
+          <p className="muted">Your first saved session will start the trend lines. <Link to="/">Start training</Link></p>
+        </div>
+      )}
+
+      {data && t && t.sessions > 0 && (
+        <>
+          <section className="kpis" aria-label="Totals">
+            <div className="kpi"><span>Sessions</span><b data-testid="kpi-sessions">{t.sessions}</b></div>
+            <div className="kpi"><span>Reps</span><b>{t.reps}</b></div>
+            <div className="kpi"><span>Clean reps</span><b>{t.reps ? Math.round((t.clean_reps / t.reps) * 100) : 0}<small>%</small></b></div>
+            <div className="kpi"><span>Avg form</span><b>{t.avg_score ? t.avg_score.toFixed(0) : "—"}</b></div>
+            <div className="kpi"><span>Sessions with fatigue</span><b>{t.fatigue_sessions}</b></div>
+          </section>
+
+          <div className="two-col">
+            <section className="panel">
+              <h2>Weekly volume <span className="h-note">reps per week</span></h2>
+              <WeeklyBars data={weekly} />
+            </section>
+            <section className="panel">
+              <div className="panel-head">
+                <h2>Form score <span className="h-note">daily average</span></h2>
+                <select className="mini-select" value={ex} onChange={(e) => setEx(e.target.value as ExerciseId | "")} aria-label="Exercise filter">
+                  <option value="">All</option>
+                  {EXERCISE_LIST.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+                </select>
+              </div>
+              {trend.length ? <ScoreTrend data={trend} /> : <p className="empty">No sessions for this exercise in range.</p>}
+            </section>
+          </div>
+
+          <div className="two-col">
+            <section className="panel">
+              <h2>Recurring faults {ex && <span className="h-note">{exLabel(ex)}</span>}</h2>
+              {faults.length === 0 ? <p className="empty">No faults recorded. Nice.</p> : (
+                <ul className="hbars">
+                  {faults.map((f) => (
+                    <li key={f.label}>
+                      <span className="hb-label">{f.label}</span>
+                      <span className="hb-track"><i style={{ width: `${(f.count / maxFault) * 100}%` }} /></span>
+                      <span className="num">{f.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+            <section className="panel">
+              <h2>Personal bests</h2>
+              <table className="table compact">
+                <thead><tr><th>Exercise</th><th className="r">Best set</th><th className="r">Best session</th><th className="r">Best form</th><th className="r">Trend</th></tr></thead>
+                <tbody>
+                  {data.bests.map((b) => (
+                    <tr key={b.exercise}>
+                      <td>{exLabel(b.exercise)}<span className="muted tiny block">{b.total_reps} reps · {b.sessions} sessions</span></td>
+                      <td className="r num">{b.max_set_reps}</td>
+                      <td className="r num">{b.max_session_reps}</td>
+                      <td className="r num">{b.best_avg_score ?? "—"}</td>
+                      <td className={"r num " + (b.trend_per_week === null ? "muted" : b.trend_per_week >= 0 ? "s-good" : "s-bad")}>
+                        {b.trend_per_week === null ? "—" : `${b.trend_per_week > 0 ? "+" : ""}${b.trend_per_week}/wk`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="tiny muted">Trend = least-squares slope of the daily form score, in points per week.</p>
+            </section>
+          </div>
+
+          {model?.metrics && (
+            <section className="panel model-card">
+              <h2>How the model score works</h2>
+              <p className="muted">
+                Every saved rep is also scored by a gradient-boosted classifier (scikit-learn) that predicts the probability
+                of a clean rep from 12 measurements. It is trained on {model.metrics.n_train.toLocaleString()} simulated reps per
+                exercise from a biomechanical simulator, not on real lifters, so treat it as a second opinion.
+              </p>
+              <table className="table compact">
+                <thead><tr><th>Exercise</th><th className="r">Model ROC-AUC</th><th className="r">Rules ROC-AUC</th><th className="r">Model accuracy</th></tr></thead>
+                <tbody>
+                  {Object.entries(model.metrics.exercises).map(([k, v]) => (
+                    <tr key={k}>
+                      <td>{exLabel(k as ExerciseId)}</td>
+                      <td className="r num">{v.model.roc_auc.toFixed(3)}</td>
+                      <td className="r num muted">{v.rule_baseline.roc_auc.toFixed(3)}</td>
+                      <td className="r num">{(v.model.accuracy * 100).toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="tiny muted">Held-out synthetic test set ({model.metrics.n_test.toLocaleString()} reps per exercise).</p>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

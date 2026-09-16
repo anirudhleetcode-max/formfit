@@ -1,0 +1,198 @@
+{
+  "n_train": 6000,
+  "n_test": 2000,
+  "exercises": {
+    "squat": {
+      "good_rate_test": 0.27,
+      "selected": "gradient_boosting",
+      "features": [
+        "min_angle",
+        "max_angle",
+        "rom",
+        "ecc_s",
+        "con_s",
+        "torso_lean_max",
+        "torso_sway",
+        "valgus_min",
+        "depth",
+        "heel_rise"
+      ],
+      "val_auc": {
+        "logreg": 0.8923,
+        "random_forest": 0.943,
+        "gradient_boosting": 0.9514
+      },
+      "rule_baseline": {
+        "accuracy": 0.834,
+        "f1_good": 0.7477,
+        "f1_faulty": 0.8763,
+        "roc_auc": 0.8658
+      },
+      "model": {
+        "accuracy": 0.88,
+        "f1_good": 0.8101,
+        "f1_faulty": 0.9123,
+        "roc_auc": 0.9521
+      },
+      "top_features": {
+        "depth": 0.283,
+        "rom": 0.187,
+        "torso_lean_max": 0.153,
+        "valgus_min": 0.114,
+        "torso_sway": 0.074
+      }
+    },
+    "pushup": {
+      "good_rate_test": 0.494,
+      "selected": "gradient_boosting",
+      "features": [
+        "min_angle",
+        "max_angle",
+        "rom",
+        "ecc_s",
+        "con_s",
+        "hip_line_min",
+        "torso_sway"
+      ],
+      "val_auc": {
+        "logreg": 0.9589,
+        "random_forest": 0.999,
+        "gradient_boosting": 0.9992
+      },
+      "rule_baseline": {
+        "accuracy": 0.9665,
+        "f1_good": 0.9665,
+        "f1_faulty": 0.9665,
+        "roc_auc": 0.9675
+      },
+      "model": {
+        "accuracy": 0.9785,
+        "f1_good": 0.9782,
+        "f1_faulty": 0.9787,
+        "roc_auc": 0.9981
+      },
+      "top_features": {
+        "hip_line_min": 0.411,
+        "rom": 0.27,
+        "max_angle": 0.181,
+        "min_angle": 0.129,
+        "torso_sway": 0.009
+      }
+    },
+    "curl": {
+      "good_rate_test": 0.332,
+      "selected": "gradient_boosting",
+      "features": [
+        "min_angle",
+        "max_angle",
+        "rom",
+        "ecc_s",
+        "con_s",
+        "torso_lean_max",
+        "torso_sway",
+        "elbow_drift_max"
+      ],
+      "val_auc": {
+        "logreg": 0.9188,
+        "random_forest": 0.9739,
+        "gradient_boosting": 0.9747
+      },
+      "rule_baseline": {
+        "accuracy": 0.907,
+        "f1_good": 0.8762,
+        "f1_faulty": 0.9255,
+        "roc_auc": 0.928
+      },
+      "model": {
+        "accuracy": 0.9305,
+        "f1_good": 0.9026,
+        "f1_faulty": 0.946,
+        "roc_auc": 0.9794
+      },
+      "top_features": {
+        "rom": 0.388,
+        "torso_sway": 0.233,
+        "elbow_drift_max": 0.196,
+        "max_angle": 0.084,
+        "min_angle": 0.07
+      }
+    },
+    "press": {
+      "good_rate_test": 0.566,
+      "selected": "gradient_boosting",
+      "features": [
+        "min_angle",
+        "max_angle",
+        "rom",
+        "ecc_s",
+        "con_s",
+        "torso_lean_max",
+        "torso_sway",
+        "hip_line_min"
+      ],
+      "val_auc": {
+        "logreg": 0.9388,
+        "random_forest": 0.9628,
+        "gradient_boosting": 0.965
+      },
+      "rule_baseline": {
+        "accuracy": 0.914,
+        "f1_good": 0.9279,
+        "f1_faulty": 0.8936,
+        "roc_auc": 0.9014
+      },
+      "model": {
+        "accuracy": 0.919,
+        "f1_good": 0.9305,
+        "f1_faulty": 0.9029,
+        "roc_auc": 0.9735
+      },
+      "top_features": {
+        "max_angle": 0.488,
+        "torso_lean_max": 0.447,
+        "torso_sway": 0.039,
+        "min_angle": 0.008,
+        "hip_line_min": 0.007
+      }
+    },
+    "lunge": {
+      "good_rate_test": 0.482,
+      "selected": "gradient_boosting",
+      "features": [
+        "min_angle",
+        "max_angle",
+        "rom",
+        "ecc_s",
+        "con_s",
+        "torso_lean_max",
+        "torso_sway",
+        "valgus_min",
+        "depth"
+      ],
+      "val_auc": {
+        "logreg": 0.8931,
+        "random_forest": 0.9489,
+        "gradient_boosting": 0.9497
+      },
+      "rule_baseline": {
+        "accuracy": 0.863,
+        "f1_good": 0.8738,
+        "f1_faulty": 0.8501,
+        "roc_auc": 0.8701
+      },
+      "model": {
+        "accuracy": 0.8935,
+        "f1_good": 0.897,
+        "f1_faulty": 0.8898,
+        "roc_auc": 0.9524
+      },
+      "top_features": {
+        "min_angle": 0.438,
+        "torso_sway": 0.245,
+        "valgus_min": 0.192,
+        "torso_lean_max": 0.081,
+        "depth": 0.026
+      }
+    }
+  }
+}
