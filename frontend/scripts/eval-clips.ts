@@ -9,7 +9,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Point } from "../src/pose/angles";
 import { PoseSession } from "../src/pose/engine";
-import type { ExerciseId } from "../src/pose/rules";
+import { toApiFeatures, type ExerciseId } from "../src/pose/rules";
 
 type Clip = { id: string; exercise: ExerciseId; gt_reps: number | null };
 type Frames = { width: number; height: number; fps: number; frames: { t: number; lm: number[][] | null }[] };
@@ -51,7 +51,7 @@ for (const clip of manifest.clips) {
     reps: s.reps.map((r) => ({
       n: r.n, t: r.t, score: r.score, faults: r.faults, confidence: r.confidence,
       abstain: r.abstainReason, min_angle: r.features.minAngle, max_angle: r.features.maxAngle,
-      ecc_s: r.eccS, con_s: r.conS,
+      ecc_s: r.eccS, con_s: r.conS, scored: r.scored, api_features: toApiFeatures(r.features),
     })),
   });
 }
