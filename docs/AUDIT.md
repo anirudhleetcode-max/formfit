@@ -88,4 +88,38 @@ Severity: **H** = misleading or unsafe, **M** = real gap a reviewer would notice
 
 ## Resolution
 
-Filled in at the end of phase 2 — see the table below.
+| # | Status | What was done |
+|---|---|---|
+| F1 | Done | Active sessions older than `STALE_SESSION_HOURS` are marked `abandoned` when the user starts a new session (test: `test_stale_active_sessions_are_abandoned`). |
+| F2 | Done | `pose/confidence.ts`: per-frame confidence (visibility × jitter) and per-rep confidence (mean × dropout × frame rate). Reps below 0.5 are counted but not scored. |
+| F3 | Done | Frames below 0.4 confidence give no live cues and no red joints. |
+| F4 | Done | "Can't see your *knees* clearly" / "Rep counted, form not scored: …" with the weakest body part named. |
+| F5 | Done | Styled confirm dialog, toasts, skeleton loaders (`components/Feedback.tsx`). |
+| F6 | Done | Unused constant removed. |
+| D1 | Kept, documented | The Python rule mirror is still needed for the baseline and the seed script. A pytest keeps its thresholds in sync. Its hip-pike blind spot (pike scored as sag, 10 points harsher) is documented in `ml/rules.py`. |
+| S1 | Done | "synthetic-trained" labels on every model score (session detail, history, charts, progress, About). `/api/model` returns `synthetic: true` and a model card. |
+| S2 | Done | Seeded sessions carry `demo: true`, shown as a "demo data" tag and a note on Progress. |
+| S3 | Done | README separates synthetic results from real-clip results. |
+| M1 | Done, small | Manifest + fetch + landmark extraction + replay through the TS engine (`experiments/real_clips`, `frontend/scripts/eval-clips.ts`). Only the bundled clip could be evaluated: Wikimedia returned HTTP 429 to every API and file request from the build machine for over an hour, so the other candidate clips are listed in the manifest but not labelled. |
+| M2 | Done | Unweighted fit. ECE, Brier score and a reliability table are reported for every model (GB ECE 0.009–0.028 on synthetic test). |
+| M3 | Done | Majority, rules (threshold tuned on validation), logistic regression, random forest and gradient boosting on identical splits. |
+| M4 | Done | Confusion matrix, per-class report, ROC-AUC, PR-AUC. Threshold and abstention confidence are chosen on validation only. |
+| M5 | Done | `errors.csv` per run plus a written analysis (`experiments/reports/form_classifier_synthetic.md`, README). |
+| M6 | Done | Server-side `out_of_distribution` / `uncertain` / `not_scored` model statuses. Browser-side abstention for poor tracking. |
+| M7 | Done | Evaluation seed 2024 ≠ tuning seed 3. Aggregation bug in the multi-exercise false-alarm rate fixed and re-run. Tests cover detection and false-alarm rates. |
+| M8 | Done | `form_model.card.json` (version, date, commit, split hashes and sizes, synthetic flag, feature version, hyper-parameters, seed, library versions, metrics). |
+| M9 | Done | The README "AI/ML Pipeline" table maps stage → file → parameters. The About page shows the same steps. |
+| X1 | Done | Placeholder or short `JWT_SECRET`: refuses to start unless `ENV=development`, where an ephemeral secret is used with a warning. `.env.example` explains how to generate one. |
+| X2 | Done | Failed-login limiter per email + IP (429). |
+| X3 | Done | ASGI body-limit middleware counts streamed bytes (test with a chunked body). |
+| X4 | Done | Log format and level configured. Access log records method, path, status and duration only. |
+| X5 | Done | `/api/health` returns `status: degraded` when the model is missing or corrupt, and 503 when MongoDB is unreachable. |
+| X6, X7 | No change needed | — |
+| U1 | Done | Disclaimer in the app footer, on the About page and in the README. |
+| U2 | Done | Confidence meter in the HUD and the session detail. Per-rep confidence and abstention reasons in the rep table. |
+| U3 | Done | About page: pipeline, data sent, model card, baseline table, real-video results, limits. |
+| U4, U5 | Done | See F5. |
+| T1 | Done | vitest + Testing Library component tests (HUD abstention, confidence meter, confirm dialog, login validation, About synthetic label, degraded model, real-eval panel). |
+| T2 | Done | `tests/test_robustness.py` (empty session, malformed payloads, chunked oversize body, NaN features, low-confidence reps, old clients, OOD, uncertain, missing and corrupt model, API without a model, rate limit, secret policy, DB down). |
+| T3 | Done | Fatigue false-alarm and detection-rate tests. |
+| T4 | Done, not run here | `.github/workflows/ci.yml` (pytest with a MongoDB service, vitest, build). |

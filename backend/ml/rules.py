@@ -3,6 +3,10 @@
 Used for two things only: (1) as the rule-based baseline the classifier is compared against in
 train.py, and (2) by the seed script to give demo reps a rule score. The browser is the source of
 truth for live sessions. Thresholds must stay in sync with rules.ts (a test checks a few).
+
+Known difference: the model features have no signed hip offset, so a broken push-up hip line is
+always reported here as `hip_sag` (penalty 30). The browser splits it into sag vs pike
+(penalty 20), so for piked push-ups this baseline's score is 10 points lower than the app's.
 """
 from .features import FAULT_PENALTY
 
