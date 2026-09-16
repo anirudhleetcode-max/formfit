@@ -10,3 +10,6 @@ python-multipart>=0.0.9
 numpy>=1.26
 scikit-learn>=1.8,<1.9
 joblib>=1.4
+# zoneinfo has no tz database on python:*-slim; /api/stats/* rejects the browser's
+# time zone without it
+tzdata>=2024.1
