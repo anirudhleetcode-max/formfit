@@ -6,30 +6,49 @@ from collections import Counter
 from .analytics import detect_fatigue
 
 
-def build_finished(reps: list[dict], model_scores: list[int | None]) -> dict:
-    """reps: dicts with set, score, faults, ecc_s, con_s, rom, t, features (performed order)."""
-    reps = sorted(reps, key=lambda r: (r["set"], r["t"]))
+def _avg(xs: list[float]) -> float | None:
+    return round(sum(xs) / len(xs), 1) if xs else None
+
+
+def build_finished(reps: list[dict], model_out: list) -> dict:
+    """reps: dicts with set, score (None = not scored), faults, ecc_s, con_s, rom, t, features,
+    confidence, scored (performed order). model_out: per-rep dicts from FormModel.predict (or plain
+    model scores, older callers)."""
+    order = sorted(range(len(reps)), key=lambda k: (reps[k]["set"], reps[k]["t"]))
     out_reps = []
-    for i, (r, ms) in enumerate(zip(reps, model_scores), start=1):
-        out_reps.append({**r, "i": i, "model_score": ms})
+    for i, k in enumerate(order, start=1):
+        r, mo = reps[k], model_out[k]
+        if not isinstance(mo, dict):
+            mo = {"model_score": mo, "model_confidence": None,
+                  "model_status": "ok" if mo is not None else "unavailable", "model_ood": []}
+        r = {**r, "scored": r.get("scored", r.get("score") is not None)}
+        out_reps.append({**r, "i": i, **mo})
 
     sets: dict[int, list[dict]] = {}
     for r in out_reps:
         sets.setdefault(r["set"], []).append(r)
     set_rows = [
-        {"set": s, "reps": len(rs), "avg_score": round(sum(x["score"] for x in rs) / len(rs), 1)}
+        {"set": s, "reps": len(rs), "avg_score": _avg([x["score"] for x in rs if x["score"] is not None]),
+         "scored_reps": sum(1 for x in rs if x["scored"])}
         for s, rs in sorted(sets.items())
     ]
     n = len(out_reps)
+    scored = [r for r in out_reps if r["scored"]]
     ms = [r["model_score"] for r in out_reps if r["model_score"] is not None]
+    confs = [r["confidence"] for r in out_reps if r.get("confidence") is not None]
     faults = Counter(f for r in out_reps for f in r["faults"])
+    statuses = Counter(r["model_status"] for r in out_reps)
     summary = {
         "total_reps": n,
         "sets": len(set_rows),
-        "avg_score": round(sum(r["score"] for r in out_reps) / n, 1) if n else None,
-        "avg_model_score": round(sum(ms) / len(ms), 1) if ms else None,
+        "avg_score": _avg([r["score"] for r in scored]),
+        "avg_model_score": _avg(ms),
         "best_set_reps": max((s["reps"] for s in set_rows), default=0),
-        "clean_reps": sum(1 for r in out_reps if not r["faults"]),
+        "clean_reps": sum(1 for r in scored if not r["faults"]),
+        "scored_reps": len(scored),
+        "unscored_reps": n - len(scored),
+        "avg_confidence": round(sum(confs) / len(confs), 2) if confs else None,
+        "model_status_counts": dict(statuses),
         "avg_ecc_s": round(sum(r["ecc_s"] for r in out_reps) / n, 2) if n else None,
         "avg_con_s": round(sum(r["con_s"] for r in out_reps) / n, 2) if n else None,
         "top_faults": [{"code": c, "count": k} for c, k in faults.most_common(3)],

@@ -39,15 +39,16 @@ def make_session(exercise: str, started: datetime, progress: float, rng: np.rand
             score, faults = rules.evaluate(exercise, feats)
             reps.append({
                 "set": s, "score": score, "faults": faults, "ecc_s": round(feats["ecc_s"], 2),
+                "confidence": round(float(rng.uniform(0.7, 0.95)), 2), "scored": True, "abstain_reason": None,
                 "con_s": round(feats["con_s"], 2), "rom": round(feats["rom"], 1), "t": round(t, 1),
                 "features": feats,
             })
             t += feats["ecc_s"] + feats["con_s"] + 0.6
         t += float(rng.uniform(60, 120))  # rest between sets
-    scores = get_model().score(exercise, [r["features"] for r in reps])
-    built = build_finished(reps, scores)
+    built = build_finished(reps, get_model().predict(exercise, [r["features"] for r in reps]))
     return {
         "exercise": exercise, "source": "live" if rng.random() < 0.85 else "upload", "status": "done",
+        "demo": True,  # simulated demo data, labelled as such in the UI
         "started_at": started, "finished_at": started + timedelta(seconds=t), "duration_s": round(t, 1),
         **built,
     }

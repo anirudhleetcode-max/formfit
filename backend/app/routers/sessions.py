@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from starlette.concurrency import run_in_threadpool
 
+from ..config import get_settings
 from ..db import get_db
 from ..schemas import Exercise, SessionCreate, SessionFinish
 from ..security import current_user
@@ -42,14 +43,23 @@ def _decode_cursor(cursor: str) -> tuple[datetime, ObjectId]:
 
 @router.post("", status_code=201)
 async def create_session(body: SessionCreate, user: dict = Depends(current_user)):
+    now = datetime.now(timezone.utc)
+    db = get_db()
+    # sessions left open (tab closed mid-workout) are closed off instead of piling up
+    await db.sessions.update_many(
+        {"user_id": user["_id"], "status": "active",
+         "started_at": {"$lt": now - timedelta(hours=get_settings().stale_session_hours)}},
+        {"$set": {"status": "abandoned", "updated_at": now}},
+    )
     doc = {
         "user_id": user["_id"],
         "exercise": body.exercise,
         "source": body.source,
         "status": "active",
-        "started_at": datetime.now(timezone.utc),
+        "started_at": now,
+        "updated_at": now,
     }
-    res = await get_db().sessions.insert_one(doc)
+    res = await db.sessions.insert_one(doc)
     doc["_id"] = res.inserted_id
     return serialize(doc)
 
@@ -63,9 +73,11 @@ async def finish_session(session_id: str, body: SessionFinish, user: dict = Depe
     if sess["status"] == "done":
         raise HTTPException(409, "Session already finished")
     reps = [r.model_dump() for r in body.reps]
-    model_scores = await run_in_threadpool(get_model().score, sess["exercise"], [r["features"] for r in reps])
-    built = build_finished(reps, model_scores)
-    update = {**built, "status": "done", "finished_at": datetime.now(timezone.utc),
+    model_out = await run_in_threadpool(
+        get_model().predict, sess["exercise"], [r["features"] for r in reps], [r["scored"] for r in reps])
+    built = build_finished(reps, model_out)
+    now = datetime.now(timezone.utc)
+    update = {**built, "status": "done", "finished_at": now, "updated_at": now,
               "duration_s": round(body.duration_s, 1)}
     doc = await db.sessions.find_one_and_update(
         {"_id": sess["_id"], "user_id": user["_id"], "status": "active"},

@@ -23,17 +23,17 @@ def fatigue_index(con_s, rom, score) -> np.ndarray:
     first 3 reps), signed so that 'more tired' is positive, and the three are averaged."""
     con = np.asarray(con_s, float)
     rom = np.asarray(rom, float)
-    sc = np.asarray(score, float)
+    sc = np.asarray([np.nan if v is None else v for v in score], float)  # None = rep not scored
     k = min(3, len(con))
     b_con = max(np.median(con[:k]), 0.2)
     b_rom = max(np.median(rom[:k]), 5.0)
-    b_sc = np.median(sc[:k])
-    parts = np.vstack([
-        np.clip((con - b_con) / b_con, -1, 2),
-        np.clip((b_rom - rom) / b_rom, -1, 1),
-        np.clip((b_sc - sc) / 100.0, -1, 1),
-    ])
-    return parts.mean(axis=0)
+    parts = [np.clip((con - b_con) / b_con, -1, 2), np.clip((b_rom - rom) / b_rom, -1, 1)]
+    finite = sc[np.isfinite(sc)]
+    if len(finite):
+        b_sc = np.median(finite[:k])
+        # unscored reps contribute nothing to the score component
+        parts.append(np.nan_to_num(np.clip((b_sc - sc) / 100.0, -1, 1), nan=0.0))
+    return np.vstack(parts).mean(axis=0)
 
 
 def change_point(y: np.ndarray, min_seg: int = 3) -> tuple[int, float, float]:
@@ -65,8 +65,11 @@ def detect_fatigue(reps: list[dict]) -> dict:
     sc = [r["score"] for r in reps]
     idx = fatigue_index(con, rom, sc)
     out["index"] = [round(float(v), 3) for v in idx]
+    sc_arr = np.array([np.nan if v is None else v for v in sc], float)
+    ok = np.isfinite(sc_arr)
+    score_slope = float(np.polyfit(np.arange(n)[ok], sc_arr[ok], 1)[0]) if ok.sum() >= 2 else 0.0
     out["slopes"] = {"con_s": round(_slope(np.array(con)), 4), "rom": round(_slope(np.array(rom)), 3),
-                     "score": round(_slope(np.array(sc, float)), 3)}
+                     "score": round(score_slope, 3)}
     if n < MIN_REPS_FOR_FATIGUE:
         return out
     k, shift, t = change_point(idx)
