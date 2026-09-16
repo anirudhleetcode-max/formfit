@@ -115,8 +115,6 @@ def test_full_journey(page: Page):
     expect(page.locator(".recharts-surface").first).to_be_visible()
     expect(page.get_by_test_id("fatigue-note")).to_be_visible()
     expect(page.get_by_test_id("tracking-quality")).to_be_visible()
-    page.wait_for_timeout(500)
-    page.screenshot(path=str(SHOTS / "02-session-detail.png"), full_page=False)
 
     # ---- upload mode on the same clip ----
     page.evaluate("() => { window.__formfitTrace = true }")  # keep raw landmarks for the parity check
@@ -137,6 +135,9 @@ def test_full_journey(page: Page):
     page.get_by_test_id("save-upload").click()
     page.wait_for_url("**/history/*", timeout=20_000)
     assert int(page.get_by_test_id("detail-reps").inner_text()) == s["reps"]
+    # the uploaded clip is analysed at 15 fps, so its reps are scored (headless live mode is too slow for that)
+    page.wait_for_timeout(600)
+    page.screenshot(path=str(SHOTS / "02-session-detail.png"), full_page=False)
 
     # ---- history + progress ----
     page.get_by_label("Main").get_by_role("link", name="History").click()
@@ -172,5 +173,8 @@ def test_demo_account_dashboard(page: Page):
     page.get_by_label("Main").get_by_role("link", name="About").click()
     expect(page.get_by_test_id("model-panel")).to_contain_text("synthetic", timeout=15_000)
     expect(page.get_by_test_id("disclaimer")).to_contain_text("not medical advice")
+    expect(page.get_by_test_id("real-eval")).to_contain_text("Reps counted / true")
+    page.get_by_test_id("model-panel").scroll_into_view_if_needed()
+    page.evaluate("() => document.querySelector('[data-testid=model-panel]').scrollIntoView({block: 'start'})")
     page.wait_for_timeout(400)
     page.screenshot(path=str(SHOTS / "05-about-model.png"))

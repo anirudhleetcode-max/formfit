@@ -13,6 +13,11 @@ if [ ! -s "$Y4M" ]; then
   ffmpeg -v error -y -i "$ROOT/samples/squat_demo.webm" -vf "scale=640:360,fps=30" -pix_fmt yuv420p "$Y4M"
 fi
 
+# refuse to run against servers that are already up (they may be stale builds)
+for url in http://127.0.0.1:8003/api/health http://127.0.0.1:5175/; do
+  if curl -s -o /dev/null "$url"; then echo "port for $url is already in use; stop that server first"; exit 1; fi
+done
+
 PIDS=()
 cleanup() { for p in "${PIDS[@]}"; do kill "$p" 2>/dev/null || true; done; wait 2>/dev/null || true; }
 trap cleanup EXIT

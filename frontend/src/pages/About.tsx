@@ -144,9 +144,9 @@ function RealVideoPanel({ data, loading }: { data: RealClipEval | null | undefin
       {data && o && o.n_clips > 0 && (
         <>
           <p className="muted">
-            Rep counting on {o.n_clips} public Wikimedia Commons clip{o.n_clips === 1 ? "" : "s"} with hand-counted reps,
-            run through the same pose pipeline as this app (run <code>{data.run_id}</code>). The sample is tiny, so treat it
-            as a sanity check, not an accuracy figure.
+            Rep counting on {o.n_clips} public video clip{o.n_clips === 1 ? "" : "s"} (Wikimedia Commons and the PushUpBench
+            benchmark) with known rep counts, run through the same pose pipeline as this app (run <code>{data.run_id}</code>).
+            The sample is tiny, so treat it as a sanity check, not an accuracy figure.
           </p>
           <dl className="card-grid">
             <div><dt>Reps counted / true</dt><dd className="num">{o.pred_reps_total} / {o.gt_reps_total}</dd></div>
@@ -159,6 +159,12 @@ function RealVideoPanel({ data, loading }: { data: RealClipEval | null | undefin
               <dd>{Object.entries(status).map(([k, v]) => `${v} ${k.replace(/_/g, " ")}`).join(", ") || "—"}</dd>
             </div>
           </dl>
+          {data.per_source_type && (
+            <p className="tiny muted">
+              {Object.entries(data.per_source_type).filter(([, m]) => m.n_clips > 0).map(([k, m]) =>
+                `${k === "rendered" ? "Rendered 3D avatars" : "Filmed people"}: ${m.pred_reps_total}/${m.gt_reps_total} reps, MAE ${fmt(m.mae, 2)}`).join(" · ")}
+            </p>
+          )}
           <p className="tiny muted">
             Form scores have not been checked against coach-labelled real reps: not measured yet.
           </p>

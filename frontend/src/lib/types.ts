@@ -79,6 +79,7 @@ export type RealClipEval = {
   dataset: { name: string; synthetic: boolean; n_clips_listed: number };
   overall: RepCountMetrics;
   per_exercise: Record<string, RepCountMetrics>;
+  per_source_type?: Record<string, RepCountMetrics>;
   model_on_real_reps?: { reps: number; status_counts: Record<string, number>; ood_features: Record<string, number> };
   note: string;
 };

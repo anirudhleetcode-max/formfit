@@ -204,7 +204,7 @@ describe("About / model panel", () => {
     render(<MemoryRouter><About /></MemoryRouter>);
     const panel = await screen.findByTestId("real-eval");
     await waitFor(() => expect(panel).toHaveTextContent("19 / 20"));
-    expect(panel).toHaveTextContent("3 public Wikimedia Commons clips");
+    expect(panel).toHaveTextContent("3 public video clips");
     expect(panel).toHaveTextContent("67% of clips");
     expect(panel).toHaveTextContent("9 out of distribution");
   });
