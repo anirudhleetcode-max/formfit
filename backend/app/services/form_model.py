@@ -31,6 +31,7 @@ class FormModel:
         self.bundle: dict | None = None
         self.metrics: dict | None = None
         self.card: dict | None = None
+        self.real_eval: dict | None = None
         self.error: str | None = None
 
     def load(self) -> None:
@@ -40,7 +41,8 @@ class FormModel:
                 raise ValueError("unexpected artifact format")
             self.bundle = bundle
             self.error = None
-            for name, attr in (("metrics.json", "metrics"), ("form_model.card.json", "card")):
+            for name, attr in (("metrics.json", "metrics"), ("form_model.card.json", "card"),
+                               ("real_clips_eval.json", "real_eval")):
                 f = self.path.with_name(name)
                 setattr(self, attr, json.loads(f.read_text()) if f.exists() else None)
             log.info("form model %s loaded from %s", bundle.get("version"), self.path.name)
@@ -101,6 +103,8 @@ class FormModel:
                              "real-lifter accuracy unknown",
             "card": self.card,
             "metrics": _metrics_summary(self.metrics),
+            # rep counting on real public clips (experiments/real_clips); None if never run
+            "real_clip_eval": self.real_eval,
         }
 
 

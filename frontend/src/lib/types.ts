@@ -66,4 +66,19 @@ export type ModelInfo = {
     selected: string; model: Scores; rule_baseline: Scores; logreg?: Scores; majority?: Scores;
     selective?: { min_confidence: number; coverage: number; accuracy_on_covered: number | null } | null;
   }> } | null;
+  real_clip_eval?: RealClipEval | null;
+};
+
+export type RepCountMetrics = {
+  n_clips: number; gt_reps_total?: number; pred_reps_total?: number; mae?: number;
+  exact_match_rate?: number; within_1_rate?: number; scored_share_of_predicted?: number;
+};
+
+export type RealClipEval = {
+  run_id: string;
+  dataset: { name: string; synthetic: boolean; n_clips_listed: number };
+  overall: RepCountMetrics;
+  per_exercise: Record<string, RepCountMetrics>;
+  model_on_real_reps?: { reps: number; status_counts: Record<string, number>; ood_features: Record<string, number> };
+  note: string;
 };

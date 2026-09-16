@@ -129,3 +129,8 @@ def test_model_info(client, auth_headers):
     info = client.get("/api/model", headers=auth_headers).json()
     assert info["ready"] is True
     assert set(info["metrics"]["exercises"]) == {"squat", "pushup", "curl", "press", "lunge"}
+    assert info["synthetic"] is True and info["card"]["dataset"]["synthetic"] is True
+    # key is always present (None until experiments/real_clips has been run)
+    assert "real_clip_eval" in info
+    if info["real_clip_eval"]:
+        assert info["real_clip_eval"]["dataset"]["synthetic"] is False

@@ -183,4 +183,29 @@ describe("About / model panel", () => {
     render(<MemoryRouter><About /></MemoryRouter>);
     expect(await screen.findByRole("alert")).toHaveTextContent("not loaded (FileNotFoundError)");
   });
+
+  it("says real-video accuracy is not measured when no evaluation was run", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => jsonResponse({ ready: true, error: null, sklearn_version: "1.8.0", metrics: null, real_clip_eval: null })));
+    render(<MemoryRouter><About /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByTestId("real-eval")).toHaveTextContent("Not measured yet."));
+  });
+
+  it("shows measured rep-count numbers from the real-clip run", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => jsonResponse({
+      ready: true, error: null, sklearn_version: "1.8.0", metrics: null,
+      real_clip_eval: {
+        run_id: "20260101-000000-real_clips_repcount", note: "tiny",
+        dataset: { name: "formfit-real-clips", synthetic: false, n_clips_listed: 3 },
+        overall: { n_clips: 3, gt_reps_total: 20, pred_reps_total: 19, mae: 0.333, exact_match_rate: 0.667, within_1_rate: 1, scored_share_of_predicted: 0.9 },
+        per_exercise: {},
+        model_on_real_reps: { reps: 19, status_counts: { ok: 10, out_of_distribution: 9 }, ood_features: {} },
+      },
+    })));
+    render(<MemoryRouter><About /></MemoryRouter>);
+    const panel = await screen.findByTestId("real-eval");
+    await waitFor(() => expect(panel).toHaveTextContent("19 / 20"));
+    expect(panel).toHaveTextContent("3 public Wikimedia Commons clips");
+    expect(panel).toHaveTextContent("67% of clips");
+    expect(panel).toHaveTextContent("9 out of distribution");
+  });
 });

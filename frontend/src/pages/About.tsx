@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DISCLAIMER, Skeleton } from "../components/Feedback";
 import { api } from "../lib/api";
 import { exLabel } from "../lib/format";
-import type { ModelInfo } from "../lib/types";
+import type { ModelInfo, RealClipEval } from "../lib/types";
 import { FRAME_MIN, MIN_REP_FPS, REP_MIN } from "../pose/confidence";
 import type { ExerciseId } from "../pose/rules";
 
@@ -126,15 +126,44 @@ export default function About() {
         )}
       </section>
 
-      <section className="panel">
-        <h2>Checked on real video</h2>
-        <p className="muted">
-          Rep counting was run on a small set of public Wikimedia Commons clips with hand-counted reps (see
-          <code> experiments/</code> in the repository for the manifest, method and per-clip results). The sample is tiny,
-          so treat it as a sanity check rather than an accuracy figure. Form scores and model scores have not been checked
-          against coach-labelled real reps: <b>not measured yet</b>.
-        </p>
-      </section>
+      <RealVideoPanel data={info?.real_clip_eval} loading={!info && !error} />
     </div>
+  );
+}
+
+function RealVideoPanel({ data, loading }: { data: RealClipEval | null | undefined; loading: boolean }) {
+  const o = data?.overall;
+  const status = data?.model_on_real_reps?.status_counts ?? {};
+  return (
+    <section className="panel" aria-labelledby="real-h" data-testid="real-eval">
+      <h2 id="real-h">Checked on real video</h2>
+      {loading && <Skeleton rows={2} />}
+      {!loading && (!data || !o || o.n_clips === 0) && (
+        <p className="muted">Real-video evaluation has not been run on this server. Not measured yet.</p>
+      )}
+      {data && o && o.n_clips > 0 && (
+        <>
+          <p className="muted">
+            Rep counting on {o.n_clips} public Wikimedia Commons clip{o.n_clips === 1 ? "" : "s"} with hand-counted reps,
+            run through the same pose pipeline as this app (run <code>{data.run_id}</code>). The sample is tiny, so treat it
+            as a sanity check, not an accuracy figure.
+          </p>
+          <dl className="card-grid">
+            <div><dt>Reps counted / true</dt><dd className="num">{o.pred_reps_total} / {o.gt_reps_total}</dd></div>
+            <div><dt>Mean abs. error per clip</dt><dd className="num">{fmt(o.mae, 2)} reps</dd></div>
+            <div><dt>Exact count</dt><dd className="num">{Math.round((o.exact_match_rate ?? 0) * 100)}% of clips</dd></div>
+            <div><dt>Within ±1</dt><dd className="num">{Math.round((o.within_1_rate ?? 0) * 100)}% of clips</dd></div>
+            <div><dt>Reps with form scored</dt><dd className="num">{Math.round((o.scored_share_of_predicted ?? 0) * 100)}%</dd></div>
+            <div>
+              <dt>Model on real reps</dt>
+              <dd>{Object.entries(status).map(([k, v]) => `${v} ${k.replace(/_/g, " ")}`).join(", ") || "—"}</dd>
+            </div>
+          </dl>
+          <p className="tiny muted">
+            Form scores have not been checked against coach-labelled real reps: not measured yet.
+          </p>
+        </>
+      )}
+    </section>
   );
 }
