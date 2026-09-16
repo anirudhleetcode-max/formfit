@@ -388,6 +388,16 @@ rate limiter, which would move to Redis.
 (required for the camera anyway). Token refresh and revocation. Model versioning stored with each scored rep (the version is
 already in the card). Monitoring of the share of `out_of_distribution` / `not_scored` reps as a drift signal.
 
+## Deployment
+
+Live demo: not deployed yet.
+Repository: not published yet.
+
+Production setup: React build on **Vercel** (`frontend/vercel.json` rewrites `/api/*` to the API),
+FastAPI in **Docker on Render** (`render.yaml`, `backend/Dockerfile`), data in **MongoDB Atlas**.
+Step-by-step instructions, environment variables and measured memory use are in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Limitations
 
 - The form classifier is trained on **synthetic** reps. Its accuracy on real lifters is **unknown**.
@@ -423,6 +433,8 @@ build. It has not been run from this environment.
 
 Sample video: "Squat - exercise demonstration video" by FitnessScape, CC BY 3.0, via Wikimedia Commons
 (`samples/ATTRIBUTION.md`).
+
+On Windows, run the e2e script from **Git Bash** with the backend virtual environment active, and point it at that interpreter: `PYTHON=python bash e2e/run_e2e.sh`. Install the browser once with `python -m playwright install chromium`.
 
 ## License
 

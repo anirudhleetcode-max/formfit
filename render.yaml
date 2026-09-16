@@ -1,0 +1,22 @@
+# Render Blueprint for the FormFit API (Docker). The frontend is deployed separately on Vercel.
+# Secrets marked `sync: false` are entered in the Render dashboard, never committed.
+services:
+  - type: web
+    name: formfit-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: ENV
+        value: production
+      - key: MONGO_URI
+        sync: false  # MongoDB Atlas connection string (mongodb+srv://...)
+      - key: MONGO_DB
+        value: formfit
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false  # e.g. https://<your-frontend>.vercel.app
