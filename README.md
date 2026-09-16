@@ -85,7 +85,7 @@ flowchart LR
   all on the same split. The model is selected by validation ROC-AUC. The decision threshold (max F1 of the faulty class) and the
   abstention confidence are also picked on validation. The test set is used once. Fitting is unweighted, so `P(clean)` stays
   calibrated (see ECE below).
-- **Artifacts:** `ml/artifacts/form_model.joblib` (0.3 MB), `form_model.card.json` (model card), `metrics.json`.
+- **Artifacts:** `ml/artifacts/form_model.joblib` (0.8 MB), `form_model.card.json` (model card), `metrics.json`.
 
 ### Fatigue detection
 
