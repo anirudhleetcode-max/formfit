@@ -5,6 +5,8 @@ them to the backend. The simulator produces the same keys, so the classifier tra
 simulated reps can score real reps.
 """
 
+FEATURES_VERSION = "features-v2"  # v2: aspect-corrected x, per-exercise feature subsets
+
 EXERCISES = ("squat", "pushup", "curl", "press", "lunge")
 
 FEATURES = (

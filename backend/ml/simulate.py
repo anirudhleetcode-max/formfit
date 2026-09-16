@@ -34,7 +34,7 @@ import numpy as np
 from .features import EXERCISES, FEATURES, NEUTRAL
 
 FPS = 30
-G = 9.81
+SIMULATOR_VERSION = "1.1"  # bump when the generator changes (part of the dataset id)
 
 # Winter (2009) segment lengths as a fraction of body height, and segment mass fractions.
 SHANK_L, THIGH_L, TRUNK_L = 0.246, 0.245, 0.288
@@ -263,15 +263,26 @@ def simulate_rep(exercise: str, rng: np.random.Generator, fatigue: float = 0.0,
     return f, int(not faults), faults
 
 
-def generate(exercise: str, n: int, seed: int = 0):
+def generate(exercise: str, n: int, seed: int = 0, with_faults: bool = False):
+    """n synthetic reps -> X (n x len(FEATURES)), y (1 = clean) [, list of true fault codes]."""
     rng = np.random.default_rng(seed)
-    X, y = [], []
+    X, y, F = [], [], []
     for _ in range(n):
         fat = float(rng.beta(1.2, 4))
-        feats, label, _ = simulate_rep(exercise, rng, fatigue=fat)
+        feats, label, faults = simulate_rep(exercise, rng, fatigue=fat)
         X.append([feats[k] for k in FEATURES])
         y.append(label)
-    return np.asarray(X, dtype=np.float32), np.asarray(y, dtype=np.int8)
+        F.append(faults)
+    X, y = np.asarray(X, dtype=np.float32), np.asarray(y, dtype=np.int8)
+    return (X, y, F) if with_faults else (X, y)
+
+
+def dataset_hash(*arrays: np.ndarray) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    for a in arrays:
+        h.update(np.ascontiguousarray(a).tobytes())
+    return h.hexdigest()[:16]
 
 
 if __name__ == "__main__":

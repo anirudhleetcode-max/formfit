@@ -42,9 +42,10 @@ def test_model_separates_good_and_faulty():
             f, lab, _ = simulate_rep(ex, rng)
             feats.append(f)
             labels.append(lab)
-        s = np.array(m.score(ex, feats), float)
+        s = np.array([np.nan if v is None else v for v in m.score(ex, feats)], float)
         labels = np.array(labels)
-        assert s[labels == 1].mean() > s[labels == 0].mean() + 30, ex
+        assert np.nanmean(s[labels == 1]) > np.nanmean(s[labels == 0]) + 30, ex
+        assert np.isnan(s).mean() < 0.1, "too many synthetic reps flagged out-of-distribution"
     assert m.score("unknown", [{}]) == [None]
 
 

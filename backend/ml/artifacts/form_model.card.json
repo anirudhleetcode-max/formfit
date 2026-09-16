@@ -1,0 +1,295 @@
+{
+  "name": "formfit-form-quality",
+  "model_version": "20260916-361dcaba",
+  "trained_at": "2026-09-16T14:38:20+00:00",
+  "git_commit": "76ebab8-dirty",
+  "task": "Binary classification per exercise: is a rep clean (no form fault)? Output P(clean).",
+  "dataset": {
+    "name": "formfit-simulated-reps",
+    "synthetic": true,
+    "simulator": "backend/ml/simulate.py",
+    "simulator_version": "1.1",
+    "sizes": {
+      "train": 6000,
+      "val": 2000,
+      "test": 2000
+    },
+    "hashes": {
+      "squat": {
+        "train": "2fff829faf7a2706",
+        "val": "b9a6932eed62ef11",
+        "test": "adfdea4ed2f9f18c",
+        "clean_rate": {
+          "train": 0.269,
+          "val": 0.271,
+          "test": 0.27
+        }
+      },
+      "pushup": {
+        "train": "ce51af85ccd09a9e",
+        "val": "816edb25780cb4c5",
+        "test": "233f5a0bec6ff01d",
+        "clean_rate": {
+          "train": 0.506,
+          "val": 0.507,
+          "test": 0.494
+        }
+      },
+      "curl": {
+        "train": "669cb8c859b40cf6",
+        "val": "21ace47c7b361e84",
+        "test": "8ceacd782ff5288a",
+        "clean_rate": {
+          "train": 0.309,
+          "val": 0.315,
+          "test": 0.332
+        }
+      },
+      "press": {
+        "train": "439219f2c0990fc3",
+        "val": "84bfb458cfefdd63",
+        "test": "b668ea886c60736c",
+        "clean_rate": {
+          "train": 0.553,
+          "val": 0.539,
+          "test": 0.566
+        }
+      },
+      "lunge": {
+        "train": "77fb7f827558f0fc",
+        "val": "a25f3e3247eba978",
+        "test": "6ec64f2de10b74a6",
+        "clean_rate": {
+          "train": 0.501,
+          "val": 0.51,
+          "test": 0.482
+        }
+      }
+    }
+  },
+  "preprocessing_version": "features-v2",
+  "features": {
+    "squat": [
+      "min_angle",
+      "max_angle",
+      "rom",
+      "ecc_s",
+      "con_s",
+      "torso_lean_max",
+      "torso_sway",
+      "valgus_min",
+      "depth",
+      "heel_rise"
+    ],
+    "pushup": [
+      "min_angle",
+      "max_angle",
+      "rom",
+      "ecc_s",
+      "con_s",
+      "hip_line_min",
+      "torso_sway"
+    ],
+    "curl": [
+      "min_angle",
+      "max_angle",
+      "rom",
+      "ecc_s",
+      "con_s",
+      "torso_lean_max",
+      "torso_sway",
+      "elbow_drift_max"
+    ],
+    "press": [
+      "min_angle",
+      "max_angle",
+      "rom",
+      "ecc_s",
+      "con_s",
+      "torso_lean_max",
+      "torso_sway",
+      "hip_line_min"
+    ],
+    "lunge": [
+      "min_angle",
+      "max_angle",
+      "rom",
+      "ecc_s",
+      "con_s",
+      "torso_lean_max",
+      "torso_sway",
+      "valgus_min",
+      "depth"
+    ]
+  },
+  "hyperparameters": {
+    "logreg": {
+      "C": 1.0,
+      "max_iter": 1000
+    },
+    "random_forest": {
+      "n_estimators": 150,
+      "max_depth": 10,
+      "min_samples_leaf": 3
+    },
+    "gradient_boosting": {
+      "n_estimators": 150,
+      "max_depth": 3,
+      "learning_rate": 0.1
+    }
+  },
+  "seed": 7,
+  "libraries": {
+    "python": "3.11.15",
+    "numpy": "2.4.4",
+    "scikit_learn": "1.8.0",
+    "joblib": "1.5.3"
+  },
+  "decision": {
+    "threshold": "chosen on validation to maximise faulty-class F1",
+    "abstention": "prediction marked 'uncertain' below the confidence level that reached 95% accuracy on validation; 'out_of_distribution' when a feature is outside the training range (quantiles [0.005, 0.995] widened by 10%)"
+  },
+  "metrics_test_synthetic": {
+    "squat": {
+      "model": "gradient_boosting",
+      "roc_auc": 0.9508,
+      "pr_auc_faulty": 0.9834,
+      "f1_faulty": 0.9292,
+      "accuracy": 0.9,
+      "brier": 0.0766,
+      "ece": 0.028,
+      "threshold": 0.46,
+      "selective": {
+        "min_confidence": 0.79,
+        "coverage": 0.751,
+        "accuracy_on_covered": 0.9574
+      },
+      "baseline_rules": {
+        "roc_auc": 0.8658,
+        "f1_faulty": 0.8763
+      },
+      "baseline_logreg": {
+        "roc_auc": 0.8681,
+        "f1_faulty": 0.8666
+      },
+      "baseline_majority": {
+        "accuracy": 0.73,
+        "f1_faulty": 0.8439
+      }
+    },
+    "pushup": {
+      "model": "gradient_boosting",
+      "roc_auc": 0.9978,
+      "pr_auc_faulty": 0.9981,
+      "f1_faulty": 0.9746,
+      "accuracy": 0.974,
+      "brier": 0.0167,
+      "ece": 0.0093,
+      "threshold": 0.73,
+      "selective": {
+        "min_confidence": 0.5,
+        "coverage": 1.0,
+        "accuracy_on_covered": 0.974
+      },
+      "baseline_rules": {
+        "roc_auc": 0.9675,
+        "f1_faulty": 0.9665
+      },
+      "baseline_logreg": {
+        "roc_auc": 0.9646,
+        "f1_faulty": 0.8907
+      },
+      "baseline_majority": {
+        "accuracy": 0.494,
+        "f1_faulty": 0.0
+      }
+    },
+    "curl": {
+      "model": "gradient_boosting",
+      "roc_auc": 0.9783,
+      "pr_auc_faulty": 0.9903,
+      "f1_faulty": 0.9484,
+      "accuracy": 0.932,
+      "brier": 0.0494,
+      "ece": 0.0166,
+      "threshold": 0.52,
+      "selective": {
+        "min_confidence": 0.65,
+        "coverage": 0.9415,
+        "accuracy_on_covered": 0.957
+      },
+      "baseline_rules": {
+        "roc_auc": 0.928,
+        "f1_faulty": 0.9255
+      },
+      "baseline_logreg": {
+        "roc_auc": 0.9157,
+        "f1_faulty": 0.8791
+      },
+      "baseline_majority": {
+        "accuracy": 0.668,
+        "f1_faulty": 0.801
+      }
+    },
+    "press": {
+      "model": "gradient_boosting",
+      "roc_auc": 0.9733,
+      "pr_auc_faulty": 0.9726,
+      "f1_faulty": 0.9015,
+      "accuracy": 0.9185,
+      "brier": 0.0581,
+      "ece": 0.013,
+      "threshold": 0.51,
+      "selective": {
+        "min_confidence": 0.75,
+        "coverage": 0.9175,
+        "accuracy_on_covered": 0.9499
+      },
+      "baseline_rules": {
+        "roc_auc": 0.9014,
+        "f1_faulty": 0.8936
+      },
+      "baseline_logreg": {
+        "roc_auc": 0.9452,
+        "f1_faulty": 0.8653
+      },
+      "baseline_majority": {
+        "accuracy": 0.5655,
+        "f1_faulty": 0.0
+      }
+    },
+    "lunge": {
+      "model": "random_forest",
+      "roc_auc": 0.9513,
+      "pr_auc_faulty": 0.9644,
+      "f1_faulty": 0.8916,
+      "accuracy": 0.893,
+      "brier": 0.0812,
+      "ece": 0.0166,
+      "threshold": 0.61,
+      "selective": {
+        "min_confidence": 0.77,
+        "coverage": 0.8495,
+        "accuracy_on_covered": 0.937
+      },
+      "baseline_rules": {
+        "roc_auc": 0.8701,
+        "f1_faulty": 0.8501
+      },
+      "baseline_logreg": {
+        "roc_auc": 0.8858,
+        "f1_faulty": 0.7937
+      },
+      "baseline_majority": {
+        "accuracy": 0.482,
+        "f1_faulty": 0.0
+      }
+    }
+  },
+  "intended_use": "A second opinion next to the rule score in a personal training app. Not for medical, rehabilitation or injury-risk decisions.",
+  "limitations": [
+    "Trained and evaluated only on simulated reps. Accuracy on real lifters is unknown.",
+    "Labels come from the simulator's own fault definitions, not from coaches.",
+    "2-D single-camera features; view-dependent measurements are approximations."
+  ]
+}
