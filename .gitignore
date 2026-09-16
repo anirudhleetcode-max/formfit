@@ -4,7 +4,9 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
-backend/.env
+.env
+.env.*
+!.env.example
 
 # Node / build
 node_modules/
