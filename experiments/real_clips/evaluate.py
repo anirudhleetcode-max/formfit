@@ -100,7 +100,8 @@ def run(cfg: dict, out_dir: Path) -> dict:
     for r in rows:
         c = by_id[r["id"]]
         r.update({"license": c["license"], "view": c.get("view"), "gt_method": c.get("gt_method"),
-                  "status": status[r["id"]]})
+                  "status": status[r["id"]], "source_type": c.get("source_type"),
+                  "conditions": c.get("conditions", []), "gt_verified_by_hand": c.get("gt_verified_by_hand")})
         r["fault_agreement"] = _fault_agreement(c.get("fault_labels"), r.get("reps") or [])
     raw.write_text(json.dumps(rows, indent=1))
     per_ex = defaultdict(list)
@@ -108,6 +109,7 @@ def run(cfg: dict, out_dir: Path) -> dict:
         per_ex[r["exercise"]].append(r)
     table = [{k: r.get(k) for k in ("id", "exercise", "view", "gt_reps", "pred_reps", "scored_reps",
                                      "mean_frame_confidence", "frames", "frames_with_pose", "model_status_counts",
+                                     "source_type", "conditions", "gt_verified_by_hand",
                                      "status")} for r in rows]
     report = {
         "dataset": {"name": "formfit-real-clips", "synthetic": False, "manifest_version": manifest.get("version"),
@@ -115,13 +117,16 @@ def run(cfg: dict, out_dir: Path) -> dict:
         "analysis_fps": fps,
         "overall": _metrics(rows),
         "per_exercise": {ex: _metrics(rs) for ex, rs in sorted(per_ex.items())},
+        "per_source_type": {st: _metrics([r for r in rows if r.get("source_type") == st]) for st in ("filmed", "rendered")},
+        "hand_verified_only": _metrics([r for r in rows if r.get("gt_verified_by_hand")]),
         "model_on_real_reps": _model_summary(rows),
         "clips": table,
-        "note": "Tiny sample of public Wikimedia Commons clips; ground truth counted by hand (see manifest gt_method).",
+        "note": "Tiny sample: 1 Wikimedia Commons clip + 10 PushUpBench clips (5 filmed people, 5 rendered 3D avatars). Ground truth per manifest gt_method.",
     }
     # compact copy served by /api/model so the UI can show the measured numbers
     summary = {"run_id": out_dir.name, "dataset": report["dataset"], "overall": report["overall"],
-               "per_exercise": report["per_exercise"], "model_on_real_reps": report["model_on_real_reps"],
+               "per_exercise": report["per_exercise"], "per_source_type": report["per_source_type"],
+               "hand_verified_only": report["hand_verified_only"], "model_on_real_reps": report["model_on_real_reps"],
                "note": report["note"]}
     (ROOT / "backend" / "ml" / "artifacts" / "real_clips_eval.json").write_text(json.dumps(summary, indent=2))
     # error file: every clip whose count is wrong

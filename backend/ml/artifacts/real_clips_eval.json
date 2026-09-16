@@ -1,0 +1,119 @@
+{
+  "run_id": "20260916-163224-real_clips_repcount",
+  "dataset": {
+    "name": "formfit-real-clips",
+    "synthetic": false,
+    "manifest_version": 2,
+    "manifest_sha256": "aea86a9ee139ddf5459658f0a3169607104dcd65d4047bb05376e8e06d54953a",
+    "n_clips_listed": 11
+  },
+  "overall": {
+    "n_clips": 11,
+    "gt_reps_total": 217,
+    "pred_reps_total": 175,
+    "mae": 4.0,
+    "mean_signed_error": -3.818,
+    "exact_match_rate": 0.636,
+    "within_1_rate": 0.818,
+    "relative_count_error": 0.203,
+    "scored_share_of_predicted": 0.863
+  },
+  "per_exercise": {
+    "curl": {
+      "n_clips": 1,
+      "gt_reps_total": 24,
+      "pred_reps_total": 25,
+      "mae": 1.0,
+      "mean_signed_error": 1.0,
+      "exact_match_rate": 0.0,
+      "within_1_rate": 1.0,
+      "relative_count_error": 0.042,
+      "scored_share_of_predicted": 0.76
+    },
+    "lunge": {
+      "n_clips": 2,
+      "gt_reps_total": 70,
+      "pred_reps_total": 67,
+      "mae": 1.5,
+      "mean_signed_error": -1.5,
+      "exact_match_rate": 0.0,
+      "within_1_rate": 0.5,
+      "relative_count_error": 0.043,
+      "scored_share_of_predicted": 0.731
+    },
+    "pushup": {
+      "n_clips": 3,
+      "gt_reps_total": 37,
+      "pred_reps_total": 37,
+      "mae": 0.0,
+      "mean_signed_error": 0.0,
+      "exact_match_rate": 1.0,
+      "within_1_rate": 1.0,
+      "relative_count_error": 0.0,
+      "scored_share_of_predicted": 1.0
+    },
+    "squat": {
+      "n_clips": 5,
+      "gt_reps_total": 86,
+      "pred_reps_total": 46,
+      "mae": 8.0,
+      "mean_signed_error": -8.0,
+      "exact_match_rate": 0.8,
+      "within_1_rate": 0.8,
+      "relative_count_error": 0.465,
+      "scored_share_of_predicted": 1.0
+    }
+  },
+  "per_source_type": {
+    "filmed": {
+      "n_clips": 6,
+      "gt_reps_total": 105,
+      "pred_reps_total": 66,
+      "mae": 6.833,
+      "mean_signed_error": -6.5,
+      "exact_match_rate": 0.667,
+      "within_1_rate": 0.833,
+      "relative_count_error": 0.39,
+      "scored_share_of_predicted": 0.909
+    },
+    "rendered": {
+      "n_clips": 5,
+      "gt_reps_total": 112,
+      "pred_reps_total": 109,
+      "mae": 0.6,
+      "mean_signed_error": -0.6,
+      "exact_match_rate": 0.6,
+      "within_1_rate": 0.8,
+      "relative_count_error": 0.027,
+      "scored_share_of_predicted": 0.835
+    }
+  },
+  "hand_verified_only": {
+    "n_clips": 5,
+    "gt_reps_total": 66,
+    "pred_reps_total": 65,
+    "mae": 0.2,
+    "mean_signed_error": -0.2,
+    "exact_match_rate": 0.8,
+    "within_1_rate": 1.0,
+    "relative_count_error": 0.015,
+    "scored_share_of_predicted": 0.908
+  },
+  "model_on_real_reps": {
+    "reps": 175,
+    "status_counts": {
+      "ok": 83,
+      "uncertain": 57,
+      "not_scored": 24,
+      "out_of_distribution": 11
+    },
+    "ood_features": {
+      "torso_sway": 9,
+      "hip_line_min": 9,
+      "ecc_s": 1,
+      "min_angle": 1
+    },
+    "note": "Real reps scored by the classifier trained on SYNTHETIC data; no fault labels, so no accuracy."
+  },
+  "note": "Tiny sample: 1 Wikimedia Commons clip + 10 PushUpBench clips (5 filmed people, 5 rendered 3D avatars). Ground truth per manifest gt_method."
+}

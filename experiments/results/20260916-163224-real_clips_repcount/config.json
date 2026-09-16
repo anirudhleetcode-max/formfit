@@ -1,0 +1,6 @@
+{
+  "name": "real_clips_repcount",
+  "task": "real_clip_repcount",
+  "description": "Rep counting on REAL public videos (data/real_clips/manifest.json) through the app's TypeScript pipeline.",
+  "analysis_fps": 15.0
+}
