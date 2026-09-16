@@ -1,0 +1,39 @@
+{
+  "name": "form_classifier_synthetic",
+  "task": "form_classifier",
+  "description": "Per-exercise form classifier on SYNTHETIC reps; baselines majority/rules/logreg/RF/GB on identical independent splits.",
+  "seed": 7,
+  "n_train": 6000,
+  "n_val": 2000,
+  "n_test": 2000,
+  "exercises": [
+    "squat",
+    "pushup",
+    "curl",
+    "press",
+    "lunge"
+  ],
+  "selective_target_accuracy": 0.95,
+  "ood_quantiles": [
+    0.005,
+    0.995
+  ],
+  "ood_margin": 0.1,
+  "models": {
+    "logreg": {
+      "C": 1.0,
+      "max_iter": 1000
+    },
+    "random_forest": {
+      "n_estimators": 150,
+      "max_depth": 10,
+      "min_samples_leaf": 3
+    },
+    "gradient_boosting": {
+      "n_estimators": 150,
+      "max_depth": 3,
+      "learning_rate": 0.1
+    }
+  },
+  "errors_per_side": 15
+}

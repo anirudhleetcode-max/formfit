@@ -1,0 +1,14 @@
+{
+  "name": "fatigue_synthetic",
+  "task": "fatigue",
+  "description": "Fatigue change-point detector on SYNTHETIC 12-rep sets; evaluation seed differs from the tuning seed.",
+  "trials": 300,
+  "reps_per_set": 12,
+  "exercises": [
+    "squat",
+    "pushup",
+    "curl"
+  ],
+  "seed": 2024,
+  "tuning_seed": 3
+}
