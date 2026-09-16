@@ -1,4 +1,4 @@
-.stage-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s3); align-items: stretch; }
+.stage-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s3); align-items: start; }
 .stage {
   position: relative; background: #07080a; border: 1px solid var(--line); border-radius: var(--r);
   aspect-ratio: 16 / 9; overflow: hidden;
