@@ -7,6 +7,7 @@ Journey: register -> Train (squat) -> fake camera -> landmarks + skeleton -> rep
 end session -> session detail with rep chart -> Upload mode on the same clip -> save ->
 History -> Progress. Screenshots go to docs/screenshots/.
 """
+import json
 import os
 import time
 import uuid
@@ -19,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:5175")
 FAKE_CAM = os.environ.get("FAKE_CAM", str(ROOT / "e2e" / ".cache" / "squat.y4m"))
 SAMPLE = ROOT / "samples" / "squat_demo.webm"
+HERE = Path(__file__).resolve().parent
 SHOTS = ROOT / "docs" / "screenshots"
 SHOTS.mkdir(parents=True, exist_ok=True)
 
@@ -99,6 +101,8 @@ def test_full_journey(page: Page):
     s = wait_for(page, lambda s: s["reps"] >= 2, 150, "at least 2 squat reps")
     print("live stats", s)
     assert int(page.get_by_test_id("total-reps").inner_text()) >= 2
+    # HUD shows a numeric tracking confidence while the lifter is tracked
+    expect(page.get_by_test_id("confidence")).to_contain_text("%")
     # screenshot while the lifter is mid-rep and the skeleton is on screen
     page.wait_for_timeout(1200)
     page.screenshot(path=str(SHOTS / "01-live-session.png"))
@@ -110,20 +114,26 @@ def test_full_journey(page: Page):
     assert live_reps >= 2
     expect(page.locator(".recharts-surface").first).to_be_visible()
     expect(page.get_by_test_id("fatigue-note")).to_be_visible()
+    expect(page.get_by_test_id("tracking-quality")).to_be_visible()
     page.wait_for_timeout(500)
     page.screenshot(path=str(SHOTS / "02-session-detail.png"), full_page=False)
 
     # ---- upload mode on the same clip ----
+    page.evaluate("() => { window.__formfitTrace = true }")  # keep raw landmarks for the parity check
     page.get_by_label("Main").get_by_role("link", name="Upload").click()
     page.get_by_test_id("ex-squat").click()
     page.get_by_test_id("video-input").set_input_files(str(SAMPLE))
     page.get_by_test_id("analyse").click()
     expect(page.get_by_test_id("upload-result")).to_be_visible(timeout=240_000)
     s = stats(page)
-    print("upload stats", s)
+    trace = page.evaluate("() => window.__formfit.trace")
+    (HERE / ".cache").mkdir(exist_ok=True)
+    (HERE / ".cache" / "upload_trace.json").write_text(json.dumps({"frames": trace, "width": 640, "height": 360}))
+    print("upload stats", {k: v for k, v in s.items() if k != "trace"})
     assert s["poseFrames"] / max(1, s["frames"]) > 0.8, "pose should be found in most frames"
-    # the clip contains 4 squats (2 in the original, played twice)
-    assert 3 <= s["reps"] <= 5, s
+    # the clip contains 4 squats (hand-counted, data/real_clips/manifest.json). Upload analysis uses a
+    # fresh landmarker with video-time timestamps, so the count does not depend on the live session above.
+    assert s["reps"] == 4, {k: v for k, v in s.items() if k != "trace"}
     page.get_by_test_id("save-upload").click()
     page.wait_for_url("**/history/*", timeout=20_000)
     assert int(page.get_by_test_id("detail-reps").inner_text()) == s["reps"]
@@ -155,3 +165,12 @@ def test_demo_account_dashboard(page: Page):
     expect(page.get_by_test_id("kpi-sessions")).to_be_visible()
     overflow = page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
     assert overflow <= 1, f"horizontal overflow {overflow}px at 375px"
+    page.wait_for_timeout(600)
+    page.screenshot(path=str(SHOTS / "06-mobile-progress.png"))
+    # About / model card panel: synthetic label and disclaimer are visible
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.get_by_label("Main").get_by_role("link", name="About").click()
+    expect(page.get_by_test_id("model-panel")).to_contain_text("synthetic", timeout=15_000)
+    expect(page.get_by_test_id("disclaimer")).to_contain_text("not medical advice")
+    page.wait_for_timeout(400)
+    page.screenshot(path=str(SHOTS / "05-about-model.png"))
