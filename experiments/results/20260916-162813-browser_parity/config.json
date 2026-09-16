@@ -1,0 +1,8 @@
+{
+  "name": "browser_parity",
+  "task": "browser_parity",
+  "description": "Do the Python-extracted landmarks used for real-clip evaluation match what the browser (WASM) computes? Sample clip only.",
+  "clip_id": "squat_fitnessscape_back",
+  "browser_trace": "e2e/.cache/upload_trace.json",
+  "analysis_fps": 15.0
+}

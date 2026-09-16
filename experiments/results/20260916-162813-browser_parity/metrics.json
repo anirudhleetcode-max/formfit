@@ -1,0 +1,52 @@
+{
+  "clip": "squat_fitnessscape_back",
+  "gt_reps": 4,
+  "frames": {
+    "browser": 214,
+    "python": 213,
+    "compared": 213,
+    "pose_missing_in_one": 0,
+    "pose_missing_in_both": 0
+  },
+  "landmark_abs_diff_normalised": {
+    "mean": 0.0039,
+    "median": 0.0025,
+    "p95": 0.0112,
+    "max": 0.0211
+  },
+  "replay": {
+    "browser": {
+      "pred_reps": 4,
+      "scored_reps": 4,
+      "min_angles": [
+        43.95,
+        47.34,
+        41.45,
+        48.04
+      ],
+      "scores": [
+        100,
+        100,
+        100,
+        100
+      ]
+    },
+    "python": {
+      "pred_reps": 4,
+      "scored_reps": 4,
+      "min_angles": [
+        42.59,
+        49.01,
+        40.53,
+        47.23
+      ],
+      "scores": [
+        100,
+        100,
+        100,
+        100
+      ]
+    }
+  },
+  "note": "Browser = MediaPipe WASM (CPU delegate, headless Chromium) in Upload mode; Python = mediapipe 0.10.32. Same pose_landmarker_lite.task, 15 analysed fps. Differences are in units of frame width/height."
+}

@@ -3,6 +3,7 @@
     python -m experiments.run --config experiments/configs/form_classifier_synthetic.json
     python -m experiments.run --config experiments/configs/fatigue_synthetic.json
     python -m experiments.run --config experiments/configs/real_clips_repcount.json
+    python -m experiments.run --config experiments/configs/browser_parity.json   (after e2e/run_e2e.sh)
 
 Every run writes: config.json (snapshot), env.json (git commit, library versions, timestamp),
 metrics.json, and task-specific files (errors.csv / errors.json / per_clip.json / model_card.json).
@@ -46,6 +47,10 @@ def main() -> None:
     elif task == "real_clip_repcount":
         from experiments.real_clips.evaluate import run as run_clips
         report = run_clips(cfg, out)
+        (out / "metrics.json").write_text(json.dumps(report, indent=2))
+    elif task == "browser_parity":
+        from experiments.real_clips.parity import run as run_parity
+        report = run_parity(cfg, out)
         (out / "metrics.json").write_text(json.dumps(report, indent=2))
     else:
         raise SystemExit(f"unknown task {task}")
