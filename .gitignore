@@ -20,3 +20,7 @@ e2e/.cache/
 .idea/
 .DS_Store
 Thumbs.db
+
+# real-clip evaluation downloads and derived landmarks (re-created by experiments/real_clips)
+data/real_clips/cache/
+data/real_clips/landmarks/

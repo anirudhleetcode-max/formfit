@@ -1,0 +1,4 @@
+# Only needed for the real-video evaluation (experiments/real_clips) and scripts/dump_landmarks.py
+-r requirements.txt
+mediapipe>=0.10.14
+opencv-python>=4.9
