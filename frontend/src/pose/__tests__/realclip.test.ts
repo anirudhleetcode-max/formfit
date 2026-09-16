@@ -38,6 +38,8 @@ describe("real clip: squat_demo.webm", () => {
   it("scores the demonstrator's reps as clean (no depth, heel or lockout false alarms)", () => {
     const s = run();
     for (const r of s.reps) {
+      expect(r.scored).toBe(true);
+      expect(r.confidence).toBeGreaterThan(0.6);
       expect(r.faults).toEqual([]);
       expect(r.features.maxAngle).toBeGreaterThan(170);
       expect(r.faults).not.toContain("shallow_depth");

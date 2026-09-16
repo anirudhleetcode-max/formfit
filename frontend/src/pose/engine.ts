@@ -1,17 +1,21 @@
 // Landmarks in, reps out. Shared by live camera mode, upload mode and the unit tests.
 
 import { OneEuro, type Point } from "./angles";
+import { FRAME_MIN, JitterMeter, jitterScore, repQuality, visibilityScore, weakestPart } from "./confidence";
 import { CueThrottle } from "./cues";
 import { RepFsm, type FsmState, type RepTiming } from "./fsm";
 import {
-  EXERCISES, FAULT_INFO, NEUTRAL, checkVisibility, evaluateRep, frameMetrics, toApiFeatures,
+  EXERCISES, FAULT_INFO, NEUTRAL, checkVisibility, evaluateRep, frameMetrics, requiredJoints, toApiFeatures,
   type ExerciseId, type FaultCode, type FrameMetrics, type RepFeatures,
 } from "./rules";
 
 export type RepResult = {
   n: number;              // rep number within the session (1-based)
   set: number;
-  score: number;
+  score: number | null;   // null = rep counted but form not scored (low tracking confidence)
+  confidence: number;     // rep tracking confidence 0..1
+  scored: boolean;
+  abstainReason: string | null;
   faults: FaultCode[];
   eccS: number;
   conS: number;
@@ -30,9 +34,12 @@ export type FrameOutput = {
   totalReps: number;
   rep: RepResult | null;
   cue: string | null;
+  confidence: number;        // smoothed frame tracking confidence 0..1 (0 when nobody is visible)
+  weakest: string | null;    // least visible required body part
+  lowConfidence: boolean;    // form feedback suppressed on this frame
 };
 
-type Sample = { t: number } & FrameMetrics;
+type Sample = { t: number; conf: number } & FrameMetrics;
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 
@@ -90,6 +97,10 @@ export class PoseSession {
   private side: "left" | "right" | null = null;
   private otherSide = 0;
   private lastRepEnd = -Infinity;
+  private jitter = new JitterMeter();
+  private frameTimes: number[] = [];   // every processed frame (for dropout / fps per rep)
+  private confEma = 0;
+  private weakest = "body";
 
   constructor(exercise: ExerciseId) {
     this.exercise = exercise;
@@ -122,11 +133,19 @@ export class PoseSession {
     const base: FrameOutput = {
       visible: false, message: null, badJoints: [], primary: null, state: this.fsm.state,
       setReps: this.setReps, totalReps: this.reps.length, rep: null, cue: null,
+      confidence: 0, weakest: null, lowConfidence: true,
     };
     if (lms && lms.length >= 33) this.framesWithPose += 1;
+    this.frameTimes.push(t);
 
     const v = checkVisibility(this.exercise, lms);
     if (!v.ok) {
+      this.confEma = 0.7 * this.confEma;
+      base.confidence = r2(this.confEma);
+      if (lms && lms.length >= 33) {
+        this.weakest = weakestPart(lms, [...EXERCISES[this.exercise].left, ...EXERCISES[this.exercise].right]);
+        base.weakest = this.weakest;
+      }
       // a short dropout keeps the rep going; a long one resets the state machine
       if (t - this.lastSeen > 1.5 && this.fsm.state !== "idle") this.fsm.state = "idle";
       base.message = v.reason;
@@ -151,12 +170,26 @@ export class PoseSession {
       heelRise: this.smooth("heel", raw.heelRise, t),
       frontal: raw.frontal,
     };
-    this.buf.push({ t, ...m });
+    this.buf.push({ t, conf: 0, ...m });
     const keepFrom = t - (this.fsm.config.maxRepS + 2);
     while (this.buf.length && this.buf[0].t < keepFrom) this.buf.shift();
 
-    const out: FrameOutput = { ...base, visible: true, primary: m.primary };
-    const live = this.fsm.state === "idle" ? [] : def.liveChecks(m);
+    // ---- tracking confidence for this frame ----
+    const need = requiredJoints(this.exercise, this.side);
+    const noise = this.jitter.update(raw.primary, t);
+    const conf = visibilityScore(need.map((i) => lms![i].visibility ?? 0)) * (noise === null ? 1 : jitterScore(noise));
+    this.confEma = 0.3 * conf + 0.7 * this.confEma;
+    this.weakest = weakestPart(lms, need);
+    this.buf[this.buf.length - 1].conf = conf;
+    while (this.frameTimes.length && this.frameTimes[0] < keepFrom) this.frameTimes.shift();
+
+    const low = conf < FRAME_MIN;
+    const out: FrameOutput = {
+      ...base, visible: true, primary: m.primary, confidence: r2(this.confEma), weakest: this.weakest, lowConfidence: low,
+    };
+    if (low) out.message = `Can't see your ${this.weakest} clearly`;
+    // no form feedback from frames we don't trust
+    const live = this.fsm.state === "idle" || low ? [] : def.liveChecks(m);
     out.badJoints = live.flatMap((f) => f.joints);
     let cue = live.length ? this.cues.offer(FAULT_INFO[live[0].code].cue, t, 2) : null;
 
@@ -165,19 +198,29 @@ export class PoseSession {
       const angleFrom = Math.max(this.lastRepEnd, ev.timing.start - 1.5);
       const features = aggregateRep(this.buf, ev.timing, def.concentricFirst, angleFrom);
       this.lastRepEnd = ev.timing.end;
-      const { score, faults } = evaluateRep(this.exercise, features);
+      const { start, end } = ev.timing;
+      const inWin = (x: number) => x >= start - 1e-6 && x <= end + 1e-6;
+      const q = repQuality(
+        this.buf.filter((b) => inWin(b.t)).map((b) => b.conf),
+        this.frameTimes.filter(inWin).length,
+        end - start,
+        this.weakest,
+      );
+      const verdict = q.scored ? evaluateRep(this.exercise, features) : { score: null, faults: [] as FaultCode[] };
       this.setReps += 1;
       const rep: RepResult = {
-        n: this.reps.length + 1, set: this.set, score, faults,
+        n: this.reps.length + 1, set: this.set, score: verdict.score, faults: verdict.faults,
+        confidence: q.confidence, scored: q.scored, abstainReason: q.reason,
         eccS: features.eccS, conS: features.conS, rom: features.rom,
         t: r2(this.elapsed(t)), features,
       };
       this.reps.push(rep);
       out.rep = rep;
-      cue = faults.length
-        ? this.cues.offer(FAULT_INFO[faults[0]].cue, t, 3) ?? cue
+      if (!q.scored) cue = this.cues.offer("Rep counted, form not scored", t, 2) ?? cue;
+      else cue = verdict.faults.length
+        ? this.cues.offer(FAULT_INFO[verdict.faults[0]].cue, t, 3) ?? cue
         : (this.setReps % 3 === 0 ? this.cues.offer("Good reps, keep going", t, 1) : null) ?? cue;
-    } else if (ev?.type === "partial") {
+    } else if (ev?.type === "partial" && !low) {
       const partialCue = { squat: "Go lower", pushup: "Chest to the floor", curl: "Full range, all the way up",
         press: "Press all the way up", lunge: "Drop the back knee" }[this.exercise];
       cue = this.cues.offer(partialCue, t, 3) ?? cue;
@@ -194,6 +237,7 @@ export class PoseSession {
     return this.reps.map((r) => ({
       set: r.set, score: r.score, faults: r.faults, ecc_s: r.eccS, con_s: r.conS,
       rom: r.rom, t: r.t, features: toApiFeatures(r.features),
+      confidence: r.confidence, scored: r.scored, abstain_reason: r.abstainReason,
     }));
   }
 }

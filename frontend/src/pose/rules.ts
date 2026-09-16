@@ -221,6 +221,12 @@ export function evaluateRep(ex: ExerciseId, f: RepFeatures): { score: number; fa
   return { score: scoreFaults(faults), faults };
 }
 
+/** Joints the exercise needs on the chosen side (or both sides). */
+export function requiredJoints(ex: ExerciseId, side: "left" | "right"): number[] {
+  const d = EXERCISES[ex];
+  return d.oneSide ? (side === "left" ? d.left : d.right) : [...d.left, ...d.right];
+}
+
 const inFrame = (p: Point | undefined) => !!p && p.x > -0.02 && p.x < 1.02 && p.y > -0.02 && p.y < 1.02;
 
 export type VisibilityResult = { ok: true; side: "left" | "right" } | { ok: false; reason: string };
@@ -230,7 +236,7 @@ export function checkVisibility(ex: ExerciseId, lms: Point[] | null | undefined,
   if (!lms || lms.length < 33) return { ok: false, reason: "No one in view" };
   const d = EXERCISES[ex];
   const side = bestSide(lms, d.left, d.right);
-  const need = d.oneSide ? (side === "left" ? d.left : d.right) : [...d.left, ...d.right];
+  const need = requiredJoints(ex, side);
   const low = minVisibility(lms, need) < minVis || need.some((i) => !inFrame(lms[i]));
   if (low) return { ok: false, reason: "Step back so your whole body is visible" };
   return { ok: true, side };
