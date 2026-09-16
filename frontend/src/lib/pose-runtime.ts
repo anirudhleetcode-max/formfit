@@ -53,6 +53,22 @@ export function getLandmarker(): Promise<Loaded> {
   return loading;
 }
 
+/** A separate landmarker for one file analysis. VIDEO mode keeps tracking state and needs increasing
+ *  timestamps, so sharing the live-camera instance would make upload results depend on what ran
+ *  before (and would squeeze the video timeline into 1 ms steps after a live session). A fresh
+ *  instance per analysis, with timestamps = video time, gives the same result every run. Uses the
+ *  delegate that worked for the shared instance. Call `close()` when done. */
+export async function createFileLandmarker(): Promise<{ landmarker: PoseLandmarker; delegate: Delegate }> {
+  const { delegate } = await getLandmarker();
+  return { landmarker: await create(delegate), delegate };
+}
+
+/** Detection for a file: timestamps are the video time in ms (must increase within one landmarker). */
+export function detectAt(lm: PoseLandmarker, source: HTMLVideoElement, ms: number): Point[] | null {
+  const res = lm.detectForVideo(source, Math.floor(ms));
+  return (res.landmarks?.[0] as Point[] | undefined) ?? null;
+}
+
 /** VIDEO mode needs strictly increasing timestamps across every caller. */
 export function nextTimestamp(ms: number): number {
   lastTs = Math.max(lastTs + 1, Math.floor(ms));

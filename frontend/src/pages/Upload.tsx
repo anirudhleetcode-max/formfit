@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ExercisePicker from "../components/ExercisePicker";
 import { EMPTY_HUD, Stage, type HudState } from "../components/Stage";
 import { api } from "../lib/api";
-import { detect, drawSkeleton, getLandmarker } from "../lib/pose-runtime";
+import { createFileLandmarker, detectAt, drawSkeleton } from "../lib/pose-runtime";
 import type { Session } from "../lib/types";
 import { PoseSession } from "../pose/engine";
 import { FAULT_INFO, type ExerciseId } from "../pose/rules";
@@ -70,8 +70,10 @@ export default function Upload() {
     setPhase("analysing");
     setHud({ ...EMPTY_HUD, tracking: "loading" });
     cancelRef.current = false;
+    let fileLm: { close(): void } | null = null;
     try {
-      const { landmarker } = await getLandmarker();
+      const { landmarker } = await createFileLandmarker();
+      fileLm = landmarker;
       if (video.readyState < 1) await new Promise((r) => video.addEventListener("loadedmetadata", r, { once: true }));
       const duration = video.duration;
       if (!Number.isFinite(duration) || duration <= 0) throw new Error("Could not read the video length.");
@@ -81,12 +83,15 @@ export default function Upload() {
       engineRef.current = eng;
       const ctx = canvas.getContext("2d")!;
       let poseFrames = 0, frames = 0, last = null as PoseSession["reps"][number] | null;
+      // ?trace=1 keeps the raw landmarks so a run can be replayed offline (debugging / evaluation)
+      const trace = (new URLSearchParams(window.location.search).has("trace") || window.__formfitTrace) ? [] as { t: number; lm: number[][] | null }[] : null;
       for (let t = 0; t < duration; t += STEP_S) {
         if (cancelRef.current) return;
         await seek(video, t);
-        const lms = detect(landmarker, video, t * 1000);
+        const lms = detectAt(landmarker, video, t * 1000);
         frames += 1;
         if (lms) poseFrames += 1;
+        trace?.push({ t, lm: lms ? lms.map((p) => [p.x, p.y, p.visibility ?? 0]) : null });
         const out = eng.process(lms, t, canvas.width / Math.max(1, canvas.height));
         if (out.rep) last = out.rep;
         drawSkeleton(ctx, lms, new Set(out.badJoints));
@@ -99,11 +104,17 @@ export default function Upload() {
       }
       setPoseRate(frames ? poseFrames / frames : 0);
       setReps([...eng.reps]);
-      window.__formfit = { frames, poseFrames, reps: eng.reps.length };
+      window.__formfit = {
+        frames, poseFrames, reps: eng.reps.length,
+        trace: trace ?? undefined,
+        repDetail: eng.reps.map((r) => ({ t: r.t, score: r.score, confidence: r.confidence, min: r.features.minAngle, max: r.features.maxAngle })),
+      };
       setPhase("done");
     } catch (e) {
       setError((e as Error).message);
       setPhase("loaded");
+    } finally {
+      fileLm?.close();
     }
   }
 

@@ -13,7 +13,14 @@ import { EXERCISES, type ExerciseId } from "../pose/rules";
 type Phase = "off" | "starting" | "ready" | "active" | "saving";
 
 declare global {
-  interface Window { __formfit?: { frames: number; poseFrames: number; reps: number; delegate?: string } }
+  interface Window {
+    __formfitTrace?: boolean;
+    __formfit?: {
+      frames: number; poseFrames: number; reps: number; delegate?: string;
+      repDetail?: { t: number; score: number | null; confidence: number; min: number; max: number }[];
+      trace?: { t: number; lm: number[][] | null }[];
+    };
+  }
 }
 
 export default function Train() {
