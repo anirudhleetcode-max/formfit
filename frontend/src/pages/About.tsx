@@ -16,7 +16,7 @@ const PIPELINE: [string, string][] = [
   ["Rep segmentation", "Finite-state machine on the main joint angle: top → down → bottom → top, with a hysteresis gap, a minimum rep time and partial-rep detection."],
   ["Tracking confidence", `Per frame: landmark visibility × jitter score. Below ${FRAME_MIN} no live cues are given. Per rep: mean frame confidence × dropout factor × frame-rate factor; below ${REP_MIN} (or under ${MIN_REP_FPS} analysed frames/s) the rep is counted but its form is not scored.`],
   ["Rule score", "17 form rules with fixed penalties, 100 − Σ penalties. Drives the live cues."],
-  ["Model score (server)", "Gradient-boosted trees (scikit-learn) estimate the probability that the rep is clean. Trained on synthetic reps. Reported as uncertain below a validated confidence, and withheld when a feature is outside the training range."],
+  ["Model score (server)", "A tree ensemble per exercise (scikit-learn gradient boosting; random forest for lunges, picked on a validation split) estimates the probability that the rep is clean. Trained on synthetic reps only; accuracy on real lifters is unknown. Reported as uncertain below a validated confidence, and withheld when a feature is outside the training range."],
   ["Analytics (server)", "Fatigue: change-point on a per-rep index of lift time, range of motion and score, with a t-test gate. Progress: MongoDB aggregations."],
 ];
 

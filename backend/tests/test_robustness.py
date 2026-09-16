@@ -221,3 +221,16 @@ def test_fatigue_eval_reports_detection_and_false_alarm_rates():
     assert res["detection_rate"]["sudden_after_rep_8"] >= 0.6
     assert res["detection_rate"]["sudden_after_rep_8"] > res["false_alarm_rate"]
     assert res["onset_error"]["squat/sudden_after_rep_8"]["mean_abs_reps"] <= 1.0
+
+
+def test_health_reports_unreachable_database(client, monkeypatch):
+    import app.main as main
+
+    class DeadDb:
+        async def command(self, *_a, **_k):
+            raise ConnectionError("down")
+
+    monkeypatch.setattr(main, "get_db", lambda: DeadDb())
+    r = client.get("/api/health")
+    assert r.status_code == 503
+    assert r.json()["status"] == "degraded" and r.json()["db"] == "unreachable"

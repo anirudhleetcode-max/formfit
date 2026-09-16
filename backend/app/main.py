@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -101,12 +102,18 @@ app.include_router(stats.router)
 
 @app.get("/api/health")
 async def health():
-    await get_db().command("ping")
     m = get_model()
-    return {
-        "status": "ok" if m.ready else "degraded",
-        "db": "connected",
+    try:
+        await asyncio.wait_for(get_db().command("ping"), timeout=3)
+        db_state = "connected"
+    except Exception as e:  # noqa: BLE001 - report, don't crash
+        log.warning("health: database unreachable (%s)", type(e).__name__)
+        db_state = "unreachable"
+    body = {
+        "status": "ok" if m.ready and db_state == "connected" else "degraded",
+        "db": db_state,
         "model": m.ready,
         "model_version": m.bundle.get("version") if m.ready else None,
         "model_error": m.error,
     }
+    return body if db_state == "connected" else JSONResponse(body, status_code=503)
