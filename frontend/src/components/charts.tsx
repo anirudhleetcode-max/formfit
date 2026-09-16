@@ -40,7 +40,7 @@ export function RepChart({ reps, onset }: { reps: Rep[]; onset: number | null })
         )}
         <Bar yAxisId="t" dataKey="con" name="Lift time (s)" fill="#3a4450" barSize={10} />
         <Line yAxisId="s" dataKey="score" name="Rule score" stroke={C.accent} strokeWidth={2} dot={{ r: 2.5 }} isAnimationActive={false} />
-        <Line yAxisId="s" dataKey="model" name="Model: clean-rep %" stroke={C.blue} strokeWidth={1.6} dot={false} strokeDasharray="5 3" isAnimationActive={false} />
+        <Line yAxisId="s" dataKey="model" name="Model % (synthetic-trained)" stroke={C.blue} strokeWidth={1.6} dot={false} strokeDasharray="5 3" isAnimationActive={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );
@@ -70,7 +70,7 @@ export function ScoreTrend({ data }: { data: { label: string; score: number; mod
         <Tooltip {...tip} />
         <Legend wrapperStyle={{ fontSize: 12 }} iconSize={10} />
         <Line dataKey="score" name="Rule score" stroke={C.accent} strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} connectNulls />
-        <Line dataKey="model" name="Model: clean-rep %" stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false} isAnimationActive={false} connectNulls />
+        <Line dataKey="model" name="Model % (synthetic-trained)" stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false} isAnimationActive={false} connectNulls />
       </LineChart>
     </ResponsiveContainer>
   );

@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Skeleton } from "../components/Feedback";
 import { api } from "../lib/api";
 import { duration, exLabel, fmtDate, fmtTime, scoreClass } from "../lib/format";
 import type { Page, Session } from "../lib/types";
@@ -54,7 +55,7 @@ export default function History() {
           <thead>
             <tr>
               <th>Date</th><th>Exercise</th><th className="r">Reps</th><th className="r">Sets</th>
-              <th className="r">Form</th><th className="r hide-sm" title="Average classifier probability of a clean rep">Model %</th><th className="hide-sm">Fatigue</th><th className="hide-sm">Length</th><th aria-label="Open" />
+              <th className="r">Form</th><th className="r hide-sm" title="Average probability of a clean rep from a classifier trained on synthetic reps">Model %</th><th className="hide-sm">Fatigue</th><th className="hide-sm">Length</th><th aria-label="Open" />
             </tr>
           </thead>
           <tbody>
@@ -62,7 +63,8 @@ export default function History() {
               <tr key={s.id}>
                 <td>
                   <Link to={`/history/${s.id}`} className="row-link">{fmtDate(s.started_at)}</Link>
-                  <span className="muted tiny block">{fmtTime(s.started_at)}{s.source === "upload" ? " · video" : ""}</span>
+                  <span className="muted tiny block">{fmtTime(s.started_at)}{s.source === "upload" ? " · video" : ""}
+                    {s.demo && <span className="tag demo">demo</span>}</span>
                 </td>
                 <td>{exLabel(s.exercise)}</td>
                 <td className="r num">{s.summary?.total_reps ?? 0}</td>
@@ -82,7 +84,7 @@ export default function History() {
             <p className="muted">Finish a set on <Link to="/">Train</Link> or <Link to="/upload">upload a video</Link> and it shows up here.</p>
           </div>
         )}
-        {loading && <p className="muted pad">Loading…</p>}
+        {loading && <div className="pad"><Skeleton rows={4} /></div>}
       </div>
       {cursor && !loading && <button className="btn more" onClick={() => load(false, cursor)}>Load older sessions</button>}
     </div>

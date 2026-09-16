@@ -79,6 +79,7 @@ async def overview(
                     "clean_reps": {"$sum": "$summary.clean_reps"},
                     "avg_score": {"$avg": "$summary.avg_score"},
                     "fatigue_sessions": {"$sum": {"$cond": ["$fatigue.detected", 1, 0]}},
+                    "demo_sessions": {"$sum": {"$cond": [{"$eq": ["$demo", True]}, 1, 0]}},
                 }},
             ],
         }},
@@ -95,7 +96,7 @@ async def overview(
         ys.append(d["avg_score"])
     trends = {ex: trend_per_week(xs, ys) for ex, (xs, ys) in per_ex.items()}
 
-    totals = res["totals"][0] if res["totals"] else {"sessions": 0, "reps": 0, "clean_reps": 0, "avg_score": None, "fatigue_sessions": 0}
+    totals = res["totals"][0] if res["totals"] else {"sessions": 0, "reps": 0, "clean_reps": 0, "avg_score": None, "fatigue_sessions": 0, "demo_sessions": 0}
     totals.pop("_id", None)
     return {
         "weeks": weeks,

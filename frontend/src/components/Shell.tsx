@@ -1,4 +1,4 @@
-import { History, LineChart, LogOut, ScanLine, Upload } from "lucide-react";
+import { History, Info, LineChart, LogOut, ScanLine, Upload } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 
@@ -7,6 +7,7 @@ const NAV = [
   { to: "/upload", label: "Upload", icon: Upload },
   { to: "/history", label: "History", icon: History },
   { to: "/progress", label: "Progress", icon: LineChart },
+  { to: "/about", label: "About", icon: Info },
 ];
 
 export function Logo() {
@@ -47,6 +48,10 @@ export default function Shell() {
       </aside>
       <main className="main">
         <Outlet />
+        <footer className="app-foot">
+          Not medical advice. FormFit gives general technique feedback and cannot assess injury risk.{" "}
+          <NavLink to="/about">How it works</NavLink>
+        </footer>
       </main>
     </div>
   );

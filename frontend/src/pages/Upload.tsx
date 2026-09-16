@@ -94,6 +94,7 @@ export default function Upload() {
         setHud((h) => ({
           ...h, setReps: eng.setReps, totalReps: eng.reps.length, last, elapsed: t,
           cue: out.cue ?? h.cue, tracking: out.visible ? "tracking" : "lost", message: out.message,
+          confidence: out.confidence, lowConfidence: out.lowConfidence,
         }));
       }
       setPoseRate(frames ? poseFrames / frames : 0);
@@ -174,14 +175,18 @@ export default function Upload() {
       >
         {phase === "done" && (
           <div className="hud-meta" data-testid="upload-result">
-            <p><b className="num">{reps.length}</b> reps found · pose detected in <b className="num">{Math.round((poseRate ?? 0) * 100)}%</b> of frames</p>
+            <p><b className="num">{reps.length}</b> reps found · pose detected in <b className="num">{Math.round((poseRate ?? 0) * 100)}%</b> of frames
+              {reps.length > 0 && <> · <b className="num">{reps.filter((r) => r.scored).length}</b> scored</>}</p>
             {reps.length === 0 && <p className="muted">No full reps. Check the exercise matches the video and the whole body is visible.</p>}
             <ol className="rep-mini">
               {reps.slice(0, 12).map((r) => (
                 <li key={r.n}>
                   <span className="num">#{r.n}</span>
-                  <span className="num">{r.score}</span>
-                  <span className="muted">{r.faults.length ? r.faults.map((f) => FAULT_INFO[f].label).join(", ") : "clean"}</span>
+                  <span className="num">{r.score ?? "—"}</span>
+                  <span className="muted">
+                    {!r.scored ? `not scored (${Math.round(r.confidence * 100)}% confidence)`
+                      : r.faults.length ? r.faults.map((f) => FAULT_INFO[f].label).join(", ") : "clean"}
+                  </span>
                 </li>
               ))}
             </ol>

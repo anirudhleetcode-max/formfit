@@ -80,6 +80,8 @@ export default function Train() {
             cue: out?.cue ?? (now - cueAt.current < 2500 ? h.cue : null),
             tracking: lms && (out ? out.visible : true) ? "tracking" : "lost",
             message: out?.message ?? (lms ? null : "Looking for you"),
+            confidence: out ? out.confidence : lms ? h.confidence : 0,
+            lowConfidence: out ? out.lowConfidence : false,
           }));
         }
       }

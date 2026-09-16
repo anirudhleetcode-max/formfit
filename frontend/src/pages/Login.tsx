@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
+import { DISCLAIMER } from "../components/Feedback";
 import { Logo } from "../components/Shell";
 import { useAuth } from "../lib/auth";
 
@@ -41,6 +42,7 @@ export default function Login() {
           <li><b>17</b><span>form checks</span></li>
           <li><b>0</b><span>frames uploaded</span></li>
         </ul>
+        <p className="auth-disclaimer">{DISCLAIMER}</p>
       </section>
       <section className="auth-form-wrap">
         <form className="auth-form" onSubmit={submit}>

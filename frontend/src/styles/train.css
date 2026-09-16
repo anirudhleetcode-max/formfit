@@ -76,3 +76,6 @@
   .big-hint { font-size: 22px; }
   .stage-empty .muted { display: none; }
 }
+.hud-conf { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); }
+.track-pill.t-weak i { background: var(--bad); }
+@media (max-width: 1100px) { .hud-conf { grid-column: 1 / -1; } }

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { ToastProvider } from "./components/Feedback";
 import Shell from "./components/Shell";
 import { AuthProvider, useAuth } from "./lib/auth";
 import History from "./pages/History";
@@ -10,6 +11,7 @@ const Train = lazy(() => import("./pages/Train"));
 const Upload = lazy(() => import("./pages/Upload"));
 const Progress = lazy(() => import("./pages/Progress"));
 const SessionDetail = lazy(() => import("./pages/SessionDetail"));
+const About = lazy(() => import("./pages/About"));
 const wrap = (el: React.ReactNode) => <Suspense fallback={<div className="page muted">Loading…</div>}>{el}</Suspense>;
 
 function Protected() {
@@ -22,6 +24,7 @@ function Protected() {
 export default function App() {
   return (
     <AuthProvider>
+      <ToastProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -31,10 +34,12 @@ export default function App() {
             <Route path="history" element={<History />} />
             <Route path="history/:id" element={wrap(<SessionDetail />)} />
             <Route path="progress" element={wrap(<Progress />)} />
+            <Route path="about" element={wrap(<About />)} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }
