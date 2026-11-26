@@ -169,6 +169,36 @@ def upper_body(J, b: Body, lean_deg: float, lateral_shift=0.0):
 # exercises: pose(u, rep params) with u in [0, 1] (0 = rest position, 1 = turning point)
 # --------------------------------------------------------------------------------------------
 
+ARM_STYLES = ["forward", "chest", "hips", "sides", "head"]
+
+
+def place_arms(J, b: Body, style: str, lean: float, u: float = 0.0):
+    """Arm posture for lower-body exercises. Randomised per set so that the arms carry no information
+    about which leg exercise it is (an earlier version always had squat = arms forward and
+    lunge = hands on hips, and the classifier learned that shortcut instead of the legs)."""
+    up, fwd = sag(lean), sag(lean + 90)
+    for s, k in ((1, "l"), (-1, "r")):
+        sh = J["sh_" + k]
+        if style == "forward":
+            wr = sh + np.array([-s * 0.02 * b.H, -0.04 * b.H * (1 - u), 0.9 * (b.uarm + b.farm)])
+            pole = -Y + 0.2 * s * X
+        elif style == "chest":
+            wr = (J["sh_l"] + J["sh_r"]) / 2 + fwd * 0.12 * b.H - up * 0.1 * b.H + s * X * 0.02 * b.H
+            pole = -Y + s * X
+        elif style == "hips":
+            wr = J["hip_" + k] + np.array([s * 0.04 * b.H, 0.05 * b.H, 0.0])
+            pole = s * X - 0.5 * Z
+        elif style == "head":
+            wr = (J["sh_l"] + J["sh_r"]) / 2 + up * 0.17 * b.H - fwd * 0.04 * b.H + s * X * 0.04 * b.H
+            pole = s * X + 0.3 * Y
+        else:  # sides
+            d = _n(-up + s * X * 0.12)
+            J["el_" + k] = sh + d * b.uarm
+            J["wr_" + k] = J["el_" + k] + _n(d + fwd * 0.15) * b.farm
+            continue
+        J["el_" + k], J["wr_" + k] = two_bone(sh, wr, b.uarm, b.farm, pole)
+
+
 def _squat(u, r, b: Body):
     hs = r["half_stance"]
     J = standing_feet(b, hs)
@@ -193,9 +223,7 @@ def _squat(u, r, b: Body):
     lean = math.degrees(math.asin(max(-0.3, min(0.97, (target - hip_z) / b.trunk))))
     lean = max(lean, 3.0) + u * r["extra_lean"]
     upper_body(J, b, lean)
-    for s, k in ((1, "l"), (-1, "r")):  # arms reach forward for balance
-        wr = J["sh_" + k] + np.array([-s * 0.02 * b.H, -0.04 * b.H * (1 - u), 0.9 * (b.uarm + b.farm)])
-        J["el_" + k], J["wr_" + k] = two_bone(J["sh_" + k], wr, b.uarm, b.farm, -Y + 0.2 * s * X)
+    place_arms(J, b, r.get("arms", "forward"), lean, u)
     J["head_up"] = sag(lean * 0.6)
     return J
 
@@ -239,9 +267,7 @@ def _lunge(u, r, b: Body):
         J["hip_" + k], J["kn_" + k] = hip, kn
     lean = r["base_lean"] + u * r["extra_lean"]
     upper_body(J, b, lean)
-    for s, k in ((1, "l"), (-1, "r")):  # hands on hips
-        wr = J["hip_" + k] + np.array([s * 0.04 * b.H, 0.05 * b.H, 0.0])
-        J["el_" + k], J["wr_" + k] = two_bone(J["sh_" + k], wr, b.uarm, b.farm, s * X - 0.5 * Z)
+    place_arms(J, b, r.get("arms", "hips"), lean, u)
     J["head_up"] = sag(lean * 0.5)
     return J
 
@@ -299,9 +325,10 @@ def _curl(u, r, b: Body):
         J["kn_" + k] = np.array([s * (b.hip_w / 2 + r["half_stance"]) / 2, b.ankle_h + b.shank, 0.01 * b.H])
     lean = r["base_lean"] - r["swing"] * math.sin(math.pi * u)  # swings back while lifting
     upper_body(J, b, lean)
-    el = r["top"] + u * (r["bottom"] - r["top"])
-    drift = r["drift"] * u
     for s, k in ((1, "l"), (-1, "r")):
+        ua = 0.0 if r.get("alternate") and s != r.get("arm", 1) else u  # alternating curls: other arm rests
+        el = r["top"] + ua * (r["bottom"] - r["top"])
+        drift = r["drift"] * ua
         down = sag(lean + 180 - drift)  # pointing down, rotated forward by drift
         down = _n(down + s * X * 0.08)
         J["el_" + k] = J["sh_" + k] + down * b.uarm
@@ -395,7 +422,11 @@ def rep_params(ex: str, rng, set_p: dict, b: Body, q: float) -> dict:
 
 
 def set_params(ex: str, rng, b: Body) -> dict:
-    s = {"half_stance": b.H * float(rng.uniform(0.07, 0.11))}
+    s = {"half_stance": b.H * float(rng.uniform(0.07, 0.16 if ex == "squat" else 0.11))}
+    if ex in ("squat", "lunge"):
+        s["arms"] = str(rng.choice(ARM_STYLES))
+    if ex == "curl":
+        s["alternate"] = bool(rng.random() < 0.5)
     if ex == "lunge":
         s.update(lead=int(rng.choice([1, -1])), stride=b.H * float(rng.uniform(0.5, 0.65)),
                  base_lean=float(rng.uniform(0, 8)))
@@ -435,7 +466,8 @@ def true_faults(ex: str, rep_frames: list[np.ndarray], r: dict, b: Body) -> tupl
         if m["min_angle"] > 108: f.append("shallow_lunge")
         if m["torso_lean_max"] > 22: f.append("torso_lean_lunge")
         return f, m
-    side = (L_SH, L_EL, L_WR, L_HIP)
+    right = ex == "curl" and r.get("alternate") and r.get("arm", 1) == -1
+    side = (R_SH, R_EL, R_WR, R_HIP) if right else (L_SH, L_EL, L_WR, L_HIP)
     el = [interior(P[side[0]], P[side[1]], P[side[2]]) for P in rep_frames]
     m["min_angle"], m["max_angle"] = min(el), max(el)
     if ex == "pushup":
@@ -449,7 +481,7 @@ def true_faults(ex: str, rep_frames: list[np.ndarray], r: dict, b: Body) -> tupl
     lean = [lean_from_vertical((P[L_HIP] + P[R_HIP]) / 2, (P[L_SH] + P[R_SH]) / 2) for P in rep_frames]
     m["torso_lean_max"], m["torso_sway"] = max(lean), max(lean) - min(lean)
     if ex == "curl":
-        m["elbow_drift_max"] = max(interior(P[L_EL], P[L_SH], P[L_HIP]) for P in rep_frames)
+        m["elbow_drift_max"] = max(interior(P[side[1]], P[side[0]], P[side[3]]) for P in rep_frames)
         f = []
         if m["elbow_drift_max"] > 28: f.append("elbow_drift")
         if m["torso_sway"] > 11: f.append("torso_swing")
@@ -487,6 +519,7 @@ def exercise_sequence(ex: str, rng, b: Body, n_reps: int, q: float):
     for i in range(n_reps):
         if i:
             r = rep_params(ex, rng, sp, b, q)
+        r["arm"] = 1 if i % 2 == 0 else -1  # alternating curls switch arm every rep
         us = np.concatenate([_ease(int(r["ecc"] * FPS)), np.ones(int(r["pause"] * FPS)),
                              1 - _ease(int(r["con"] * FPS)), np.zeros(int(r["rest"] * FPS))])
         start = len(frames) / FPS

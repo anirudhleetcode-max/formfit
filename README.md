@@ -70,7 +70,7 @@ flowchart LR
 | 9 | Rule score | `pose/rules.ts: evaluateRep` | 17 fault rules with fixed penalties: `score = 100 − Σ penalties`. The same rules drive the live cues and the red joints. |
 | 3b | Landmark guard | `pose/guard.ts` | Online repair before any geometry: undo left/right identity swaps, reject joints moving faster than 8 torso lengths/s (incorrect pose), hold joints hidden ≤ 0.6 s at their last trusted position with lowered visibility. |
 | 10 | Confidence-aware feedback | `pose/engine.ts`, `components/Stage.tsx` | Frame confidence < **0.4**: no live cues, no red joints, and the HUD says "Can't see your *knees* clearly". Rep confidence < **0.5** (or < 8 analysed frames/s): the rep is **counted but not scored** (`score: null`, `scored: false`, `abstain_reason`). |
-| 10b | Exercise recognition + false-rep gate | `pose/exercise.ts` | A temporal CNN on the last 2 s of normalised landmarks (15 fps) labels the movement (5 exercises or `other`). When the counter closes a rep and the TCN is ≥ 0.8 sure it was a different movement, the rep is not counted. |
+| 10b | Exercise recognition + false-rep gate | `pose/exercise.ts` | A temporal CNN on the last 2 s of normalised landmarks (15 fps) labels the movement (5 exercises or `other`). When the counter closes a rep and the TCN is ≥ 0.8 sure it was a different movement, the rep is set aside, not counted. A "Count anyway" button restores set-aside reps and turns the gate off for the session. |
 | 11 | Model score (server) | `app/services/form_model.py` | One classifier per exercise gives `P(clean)`. If any feature is outside the training range (0.5–99.5% quantiles ± 10%), the status is `out_of_distribution` and no score is given. If `max(P, 1 − P)` is below the confidence that reached 95% accuracy on validation, the status is `uncertain`. Reps the browser did not score get `not_scored`. |
 | 12 | Analytics (server) | `app/services/analytics.py` | Fatigue change-point per session. Weekly volume, daily scores, recurring faults and personal bests via `$facet` aggregation. |
 | 13 | API → UI | `routers/`, `pages/` | Rule score, model score + status, rep confidence and abstain reason are shown per rep. The About page shows the model card and the measured evaluation numbers. |
@@ -103,21 +103,25 @@ coordinate normalization, and image classification vs object detection vs pose e
 
 - **Synthetic 3-D ground truth** (`backend/cv/skeleton.py`): a kinematic generator renders the 5 exercises and 5 non-exercise
   movements at any camera angle, with a MediaPipe-like error model (noise, self-occlusion, occluders, dropouts, left/right swaps).
-  It has exact labels for reps, faults and exercise. **Synthetic, not real people.**
-- **Exercise classification, pose-based vs temporal** (`backend/cv/classify.py`). A per-frame model on normalised landmarks,
-  window statistics, and a 31k-parameter temporal CNN. On new camera views the per-frame model drops to macro F1 **0.81**, against
-  **0.94** for the TCN. Under heavy noise and occlusion the TCN is best (**0.985**). The TCN runs in the browser (`pose/exercise.ts`,
-  0.9 ms per 2-s window) and shows "Movement: Squat 97%" in the HUD.
-- **False repetitions:** with the wrong exercise selected, the angle-based counter took **4.5 reps/min** from other movements.
-  The TCN gate cuts this to **0.012/min** and loses 4 of 4,122 true reps (synthetic).
+  It has exact labels for reps, faults and exercise. **Synthetic, not real people**; every result below says which kind it is.
+- **Landmark accuracy against human labels (real):** on 493 single-person COCO images, lite reaches PCK@0.2 **0.76** (0.82 on
+  detected people) and OKS 0.79; full 0.80 / 0.81; heavy 0.82 / 0.83.
+- **Exercise classification, pose-based vs temporal** (`backend/cv/classify.py`): a per-frame model, window statistics and a
+  31k-parameter temporal CNN. On synthetic data from unseen camera views the per-frame model drops to macro F1 **0.82** and the TCN holds
+  **0.94**. On **real** clips the per-frame model is better (window accuracy 0.83 vs 0.78). The TCN runs in the browser
+  (`pose/exercise.ts`, 0.9 ms per 2-s window).
+- **False repetitions (real):** with the wrong exercise selected, the angle-based counter took **9.4 reps/min** from other movements
+  on real video. The TCN gate cuts this to **0.15/min**. It also vetoed 26 real reps, 24 of them on a kneeling-curl variant, so vetoed reps
+  are kept and a "Count anyway" button restores them.
+- **Sim-to-real lesson:** the first TCN learned "hands on hips = lunge" from the generator and called every real front-view squat a lunge.
+  Randomising arm posture fixed it (86–100% of real squat windows now correct). Details in the doc, §7.
 - **Occlusion and incorrect poses** (`pose/guard.ts`): left/right swap repair, rejection of joints moving faster than a limb can,
-  and ≤ 0.6 s gap filling. Reps missed to occlusion drop by 23–25% (synthetic). On real frames, MediaPipe reports boxed-over
+  and ≤ 0.6 s gap filling. Reps missed to occlusion drop by 25% (synthetic). On real frames, MediaPipe reports boxed-over
   joints with visibility 0.71 while they are wrong (PCK@0.1 0.15), so visibility alone cannot detect occlusion.
 - **Low light** (real frames): lite keeps PCK@0.1 0.83 (vs heavy) at 12% light. Gain and gamma + CLAHE enhancement made it
   *worse*, so the app warns "Room is dark" instead of enhancing.
-- **Camera angle:** side and 45° views count reps ~3× more accurately than front and rear (MAE 0.8 vs 2.2–2.9, synthetic).
-- **Landmark agreement and latency** (real frames, vs heavy): lite PCK@0.1 0.887 at 13 ms/frame, full 0.945 at 18 ms,
-  heavy 57 ms. Accuracy against human labels (COCO PCK/OKS) has a script (`experiments/cv/coco_pck.py`) but needs the dataset.
+- **Camera angle:** side views count reps 2–3× more accurately than front and rear (MAE ≈ 1.0 vs 2.4–3.1, synthetic).
+- **Latency:** MediaPipe lite 13 ms/frame (CPU), full 18 ms, heavy 57 ms. Everything after the pose model costs < 0.3 ms per frame.
 
 ## Features
 
@@ -306,6 +310,9 @@ Six clips show filmed people and five show rendered 3D avatars. **This is a very
   Whether those scores are *right* is **not measured yet** (there are no fault labels).
 - Browser (WASM) vs Python landmarks on the sample clip: mean difference 0.004 frame units, same 4-rep count
   (`20260916-162813-browser_parity`).
+- **Re-run on 2026-11-26** (`20261126-165409-real_clips_repcount`, landmarks re-extracted with MediaPipe Python 1.2.3):
+  MAE 4.27, exact 45%, within ±1 73% (172 / 217). The engine is unchanged; the newer MediaPipe build moved two clips by one rep each.
+  With the landmark guard the counts are identical. With the default exercise gate see [docs/COMPUTER_VISION.md](docs/COMPUTER_VISION.md) §8.
 - Real-video form accuracy: **Dataset required before evaluation.** Real-set fatigue: **Dataset required before evaluation.**
 
 The real results are much less clean than the synthetic ones: a shallow drop-squat clip got 0 of 40 reps counted.

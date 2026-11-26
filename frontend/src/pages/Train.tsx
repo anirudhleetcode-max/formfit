@@ -232,6 +232,12 @@ export default function Train() {
       {error && <p className="alert" role="alert">{error}</p>}
 
       <Stage exercise={exercise}
+        onAcceptVetoed={() => {
+          const eng = engineRef.current;
+          if (!eng) return;
+          eng.acceptVetoed();
+          setHud((h) => ({ ...h, setReps: eng.setReps, totalReps: eng.reps.length, vetoed: 0 }));
+        }}
         videoRef={videoRef}
         canvasRef={canvasRef}
         mirrored

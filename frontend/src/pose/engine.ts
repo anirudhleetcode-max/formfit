@@ -117,8 +117,10 @@ export class PoseSession {
   /** Optional landmark guard (swap repair, implausible-joint rejection, short-gap filling), see guard.ts. */
   readonly guard: LandmarkGuard | null;
   readonly recognizer: ExerciseRecognizer | null;
-  readonly gateTau: number;
+  gateTau: number;
   vetoedReps = 0;
+  /** reps the gate did not count (they looked like a different movement) */
+  vetoed: RepResult[] = [];
   private recognized: Recognition | null = null;
   private recogFrame = 0;
 
@@ -129,6 +131,17 @@ export class PoseSession {
       : new LandmarkGuard(opts.guard === true ? {} : opts.guard);
     this.recognizer = opts.recognizer ?? null;
     this.gateTau = opts.gateTau ?? 0;
+  }
+
+  /** The user says the vetoed reps were real (an unusual variant): count them and stop gating this session. */
+  acceptVetoed(): number {
+    const n = this.vetoed.length;
+    this.gateTau = 0;
+    this.reps = [...this.reps, ...this.vetoed].sort((a, b) => a.t - b.t).map((r, i) => ({ ...r, n: i + 1 }));
+    this.setReps = this.reps.filter((r) => r.set === this.set).length;
+    this.vetoed = [];
+    this.vetoedReps = 0;
+    return n;
   }
 
   private recognize(force = false): Recognition | null {
@@ -225,18 +238,13 @@ export class PoseSession {
     out.badJoints = live.flatMap((f) => f.joints);
     let cue = live.length ? this.cues.offer(FAULT_INFO[live[0].code].cue, t, 2) : null;
 
-    let ev = this.fsm.update(t, def.signal(m.primary));
+    const ev = this.fsm.update(t, def.signal(m.primary));
+    let veto = false;
     if (ev?.type === "rep" && this.gateTau > 0) {
       const r = this.recognize(true);
       out.recognized = r;
-      if (r && r.label !== this.exercise && r.p >= this.gateTau) {
-        // the counter saw a rep, but the last 2 s look like a different movement: a false rep
-        this.vetoedReps += 1;
-        this.lastRepEnd = ev.timing.end;
-        out.vetoed = true;
-        cue = this.cues.offer(`That didn't look like a ${def.label.toLowerCase()}, not counted`, t, 3) ?? cue;
-        ev = null;
-      }
+      // the counter saw a rep, but the last 2 s look like a different movement: probably a false rep
+      veto = !!r && r.label !== this.exercise && r.p >= this.gateTau;
     }
     if (ev?.type === "rep") {
       const angleFrom = Math.max(this.lastRepEnd, ev.timing.start - 1.5);
@@ -251,19 +259,29 @@ export class PoseSession {
         this.weakest,
       );
       const verdict = q.scored ? evaluateRep(this.exercise, features) : { score: null, faults: [] as FaultCode[] };
-      this.setReps += 1;
       const rep: RepResult = {
         n: this.reps.length + 1, set: this.set, score: verdict.score, faults: verdict.faults,
         confidence: q.confidence, scored: q.scored, abstainReason: q.reason,
         eccS: features.eccS, conS: features.conS, rom: features.rom,
         t: r2(this.elapsed(t)), features,
       };
-      this.reps.push(rep);
-      out.rep = rep;
-      if (!q.scored) cue = this.cues.offer("Rep counted, form not scored", t, 2) ?? cue;
-      else cue = verdict.faults.length
-        ? this.cues.offer(FAULT_INFO[verdict.faults[0]].cue, t, 3) ?? cue
-        : (this.setReps % 3 === 0 ? this.cues.offer("Good reps, keep going", t, 1) : null) ?? cue;
+      if (veto) {
+        // kept aside, not lost: acceptVetoed() counts them if the user says this IS the exercise (a variant)
+        this.vetoed.push(rep);
+        this.vetoedReps += 1;
+        out.vetoed = true;
+        cue = this.cues.offer(`That didn't look like a ${def.label.toLowerCase()}, not counted`, t, 3) ?? cue;
+      } else {
+        this.setReps += 1;
+        this.reps.push(rep);
+        out.rep = rep;
+      }
+      if (!veto) {  // no form cue for a rep that was not counted
+        if (!q.scored) cue = this.cues.offer("Rep counted, form not scored", t, 2) ?? cue;
+        else cue = verdict.faults.length
+          ? this.cues.offer(FAULT_INFO[verdict.faults[0]].cue, t, 3) ?? cue
+          : (this.setReps % 3 === 0 ? this.cues.offer("Good reps, keep going", t, 1) : null) ?? cue;
+      }
     } else if (ev?.type === "partial" && !low) {
       const partialCue = { squat: "Go lower", pushup: "Chest to the floor", curl: "Full range, all the way up",
         press: "Press all the way up", lunge: "Drop the back knee" }[this.exercise];

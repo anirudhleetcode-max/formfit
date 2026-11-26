@@ -71,3 +71,27 @@ describe("PoseSession with the guard", () => {
     expect(run(false)).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe("false-rep gate", () => {
+  const always = (label: string) => ({ recognize: () => ({ label, p: 0.95, probs: {} }), push: () => {} });
+  const run = (label: string) => {
+    // a fake recognizer that always reports `label`; one clean squat rep
+    const s = new PoseSession("squat", { recognizer: always(label) as never, gateTau: 0.8 });
+    repSeries(172, 70, 1.2, 1.0, 0.3).forEach((k, i) => s.process(frame(k), i / FPS));
+    return s;
+  };
+  it("counts a rep the classifier agrees with", () => {
+    const s = run("squat");
+    expect(s.reps.length).toBe(1);
+    expect(s.vetoedReps).toBe(0);
+  });
+  it("keeps a vetoed rep aside and restores it on request", () => {
+    const s = run("lunge");
+    expect(s.reps.length).toBe(0);
+    expect(s.vetoedReps).toBe(1);
+    expect(s.acceptVetoed()).toBe(1);
+    expect(s.reps.length).toBe(1);
+    expect(s.setReps).toBe(1);
+    expect(s.gateTau).toBe(0);
+  });
+});

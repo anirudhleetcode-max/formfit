@@ -1,0 +1,428 @@
+{
+ "data": "REAL video (data/real_clips/manifest.json); 5 of 11 clips are rendered 3-D avatars",
+ "gate_tau": 0.8,
+ "per_clip": [
+  {
+   "id": "squat_fitnessscape_back",
+   "exercise": "squat",
+   "view": "rear-oblique",
+   "source": "filmed",
+   "gt": 4,
+   "baseline": 4,
+   "guard": 4,
+   "guard_gate": 4,
+   "vetoed": 0
+  },
+  {
+   "id": "pub_squat_129",
+   "exercise": "squat",
+   "view": "front",
+   "source": "rendered",
+   "gt": 15,
+   "baseline": 14,
+   "guard": 14,
+   "guard_gate": 14,
+   "vetoed": 0
+  },
+  {
+   "id": "pub_squat_130",
+   "exercise": "squat",
+   "view": "front",
+   "source": "rendered",
+   "gt": 12,
+   "baseline": 10,
+   "guard": 10,
+   "guard_gate": 8,
+   "vetoed": 2
+  },
+  {
+   "id": "pub_squat_135",
+   "exercise": "squat",
+   "view": "front",
+   "source": "rendered",
+   "gt": 15,
+   "baseline": 15,
+   "guard": 15,
+   "guard_gate": 15,
+   "vetoed": 0
+  },
+  {
+   "id": "pub_lunge_134",
+   "exercise": "lunge",
+   "view": "side",
+   "source": "rendered",
+   "gt": 20,
+   "baseline": 19,
+   "guard": 19,
+   "guard_gate": 19,
+   "vetoed": 0
+  },
+  {
+   "id": "pub_lunge_008",
+   "exercise": "lunge",
+   "view": "side",
+   "source": "rendered",
+   "gt": 50,
+   "baseline": 48,
+   "guard": 48,
+   "guard_gate": 48,
+   "vetoed": 0
+  },
+  {
+   "id": "pub_curl_085",
+   "exercise": "curl",
+   "view": "front",
+   "source": "filmed",
+   "gt": 24,
+   "baseline": 25,
+   "guard": 25,
+   "guard_gate": 1,
+   "vetoed": 24
+  },
+  {
+   "id": "pub_pushup_098",
+   "exercise": "pushup",
+   "view": "side",
+   "source": "filmed",
+   "gt": 12,
+   "baseline": 12,
+   "guard": 12,
+   "guard_gate": 12,
+   "vetoed": 0
+  },
+  {
+   "id": "pub_pushup_088",
+   "exercise": "pushup",
+   "view": "oblique",
+   "source": "filmed",
+   "gt": 11,
+   "baseline": 11,
+   "guard": 11,
+   "guard_gate": 9,
+   "vetoed": 2
+  },
+  {
+   "id": "pub_pushup_046",
+   "exercise": "pushup",
+   "view": "side",
+   "source": "filmed",
+   "gt": 14,
+   "baseline": 14,
+   "guard": 14,
+   "guard_gate": 14,
+   "vetoed": 0
+  },
+  {
+   "id": "pub_squat_042",
+   "exercise": "squat",
+   "view": "front",
+   "source": "filmed",
+   "gt": 40,
+   "baseline": 0,
+   "guard": 0,
+   "guard_gate": 0,
+   "vetoed": 0
+  }
+ ],
+ "rep_counting": {
+  "baseline": {
+   "clips": 11,
+   "gt_reps": 217,
+   "pred_reps": 172,
+   "mae": 4.273,
+   "exact": 0.455,
+   "within_1": 0.727,
+   "filmed": {
+    "clips": 6,
+    "gt_reps": 105,
+    "pred_reps": 66,
+    "mae": 6.833,
+    "exact": 0.667,
+    "within_1": 0.833
+   }
+  },
+  "guard": {
+   "clips": 11,
+   "gt_reps": 217,
+   "pred_reps": 172,
+   "mae": 4.273,
+   "exact": 0.455,
+   "within_1": 0.727,
+   "filmed": {
+    "clips": 6,
+    "gt_reps": 105,
+    "pred_reps": 66,
+    "mae": 6.833,
+    "exact": 0.667,
+    "within_1": 0.833
+   }
+  },
+  "guard_gate": {
+   "clips": 11,
+   "gt_reps": 217,
+   "pred_reps": 144,
+   "mae": 6.636,
+   "exact": 0.364,
+   "within_1": 0.545,
+   "filmed": {
+    "clips": 6,
+    "gt_reps": 105,
+    "pred_reps": 40,
+    "mae": 10.833,
+    "exact": 0.5,
+    "within_1": 0.5
+   }
+  }
+ },
+ "false_reps_wrong_exercise": {
+  "guard": {
+   "reps_per_min": 9.418,
+   "reps": 317,
+   "minutes": 33.66,
+   "by_selected_actual": {
+    "pushup<-squat": 47,
+    "curl<-squat": 43,
+    "press<-squat": 51,
+    "lunge<-squat": 46,
+    "squat<-lunge": 69,
+    "pushup<-lunge": 0,
+    "curl<-lunge": 0,
+    "press<-lunge": 0,
+    "squat<-curl": 0,
+    "pushup<-curl": 0,
+    "press<-curl": 24,
+    "lunge<-curl": 0,
+    "squat<-pushup": 1,
+    "curl<-pushup": 28,
+    "press<-pushup": 8,
+    "lunge<-pushup": 0
+   }
+  },
+  "guard_gate": {
+   "reps_per_min": 2.793,
+   "reps": 94,
+   "minutes": 33.66,
+   "by_selected_actual": {
+    "pushup<-squat": 2,
+    "curl<-squat": 2,
+    "press<-squat": 40,
+    "lunge<-squat": 42,
+    "squat<-lunge": 0,
+    "pushup<-lunge": 0,
+    "curl<-lunge": 0,
+    "press<-lunge": 0,
+    "squat<-curl": 0,
+    "pushup<-curl": 0,
+    "press<-curl": 8,
+    "lunge<-curl": 0,
+    "squat<-pushup": 0,
+    "curl<-pushup": 0,
+    "press<-pushup": 0,
+    "lunge<-pushup": 0
+   }
+  }
+ },
+ "exercise_classification": {
+  "windows": 493,
+  "classes_present": [
+   "squat",
+   "pushup",
+   "curl",
+   "lunge"
+  ],
+  "results": {
+   "tcn (temporal)": {
+    "window_accuracy": 0.568,
+    "macro_f1_present_classes": 0.4559,
+    "clip_majority_accuracy": 0.545,
+    "per_clip": {
+     "pub_curl_085": {
+      "windows": 41,
+      "accuracy": 0.024,
+      "predicted": {
+       "curl": 1,
+       "lunge": 40
+      }
+     },
+     "pub_lunge_008": {
+      "windows": 107,
+      "accuracy": 0.935,
+      "predicted": {
+       "lunge": 100,
+       "other": 7
+      }
+     },
+     "pub_lunge_134": {
+      "windows": 43,
+      "accuracy": 0.953,
+      "predicted": {
+       "lunge": 41,
+       "other": 2
+      }
+     },
+     "pub_pushup_046": {
+      "windows": 61,
+      "accuracy": 0.967,
+      "predicted": {
+       "pushup": 59,
+       "curl": 1,
+       "other": 1
+      }
+     },
+     "pub_pushup_088": {
+      "windows": 41,
+      "accuracy": 0.854,
+      "predicted": {
+       "pushup": 35,
+       "lunge": 6
+      }
+     },
+     "pub_pushup_098": {
+      "windows": 31,
+      "accuracy": 1.0,
+      "predicted": {
+       "pushup": 31
+      }
+     },
+     "pub_squat_042": {
+      "windows": 62,
+      "accuracy": 0.0,
+      "predicted": {
+       "lunge": 1,
+       "other": 61
+      }
+     },
+     "pub_squat_129": {
+      "windows": 34,
+      "accuracy": 0.0,
+      "predicted": {
+       "curl": 1,
+       "lunge": 30,
+       "other": 3
+      }
+     },
+     "pub_squat_130": {
+      "windows": 29,
+      "accuracy": 0.0,
+      "predicted": {
+       "curl": 2,
+       "lunge": 24,
+       "other": 3
+      }
+     },
+     "pub_squat_135": {
+      "windows": 31,
+      "accuracy": 0.0,
+      "predicted": {
+       "lunge": 30,
+       "other": 1
+      }
+     },
+     "squat_fitnessscape_back": {
+      "windows": 13,
+      "accuracy": 1.0,
+      "predicted": {
+       "squat": 13
+      }
+     }
+    }
+   },
+   "frame (pose-based)": {
+    "window_accuracy": 0.7323,
+    "macro_f1_present_classes": 0.6617,
+    "clip_majority_accuracy": 0.818,
+    "per_clip": {
+     "pub_curl_085": {
+      "windows": 41,
+      "accuracy": 0.0,
+      "predicted": {
+       "squat": 1,
+       "press": 2,
+       "other": 38
+      }
+     },
+     "pub_lunge_008": {
+      "windows": 107,
+      "accuracy": 0.925,
+      "predicted": {
+       "lunge": 99,
+       "other": 8
+      }
+     },
+     "pub_lunge_134": {
+      "windows": 43,
+      "accuracy": 0.93,
+      "predicted": {
+       "lunge": 40,
+       "other": 3
+      }
+     },
+     "pub_pushup_046": {
+      "windows": 61,
+      "accuracy": 0.984,
+      "predicted": {
+       "pushup": 60,
+       "other": 1
+      }
+     },
+     "pub_pushup_088": {
+      "windows": 41,
+      "accuracy": 0.854,
+      "predicted": {
+       "pushup": 35,
+       "lunge": 3,
+       "other": 3
+      }
+     },
+     "pub_pushup_098": {
+      "windows": 31,
+      "accuracy": 1.0,
+      "predicted": {
+       "pushup": 31
+      }
+     },
+     "pub_squat_042": {
+      "windows": 62,
+      "accuracy": 0.0,
+      "predicted": {
+       "other": 62
+      }
+     },
+     "pub_squat_129": {
+      "windows": 34,
+      "accuracy": 0.853,
+      "predicted": {
+       "squat": 29,
+       "curl": 4,
+       "other": 1
+      }
+     },
+     "pub_squat_130": {
+      "windows": 29,
+      "accuracy": 0.828,
+      "predicted": {
+       "squat": 24,
+       "curl": 3,
+       "other": 2
+      }
+     },
+     "pub_squat_135": {
+      "windows": 31,
+      "accuracy": 0.968,
+      "predicted": {
+       "squat": 30,
+       "curl": 1
+      }
+     },
+     "squat_fitnessscape_back": {
+      "windows": 13,
+      "accuracy": 1.0,
+      "predicted": {
+       "squat": 13
+      }
+     }
+    }
+   }
+  }
+ }
+}

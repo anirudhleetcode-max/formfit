@@ -178,6 +178,13 @@ export default function Upload() {
       )}
 
       <Stage exercise={exercise}
+        onAcceptVetoed={() => {
+          const eng = engineRef.current;
+          if (!eng) return;
+          eng.acceptVetoed();
+          setHud((h) => ({ ...h, setReps: eng.setReps, totalReps: eng.reps.length, vetoed: 0 }));
+          setReps([...eng.reps]);
+        }}
         videoRef={videoRef}
         canvasRef={canvasRef}
         mirrored={false}

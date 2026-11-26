@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { exLabel } from "../lib/format";
 import type { ModelInfo, RealClipEval } from "../lib/types";
 import { FRAME_MIN, MIN_REP_FPS, REP_MIN } from "../pose/confidence";
+import { DEFAULT_GATE_TAU } from "../pose/exercise";
 import type { ExerciseId } from "../pose/rules";
 
 const fmt = (x: number | null | undefined, d = 3) => (x === null || x === undefined ? "—" : x.toFixed(d));
@@ -11,10 +12,12 @@ const fmt = (x: number | null | undefined, d = 3) => (x === null || x === undefi
 const PIPELINE: [string, string][] = [
   ["Frame", "Webcam or uploaded video frame. Stays in the browser; nothing is uploaded."],
   ["Pose model", "MediaPipe PoseLandmarker lite (pretrained by Google, not trained here). 33 landmarks with a visibility score. GPU delegate, CPU fallback."],
+  ["Landmark guard", "Before any angle is measured: left/right leg or arm swaps are undone, a joint that moves faster than a limb can (8 torso lengths per second) is treated as a detection error, and a joint hidden for up to 0.6 s is held at its last trusted position with lower confidence."],
   ["Geometry", "x is rescaled by the video aspect ratio, then joint angles, torso lean, hip line, knee/ankle width ratio, depth and heel lift are measured. Camera view (side / oblique / front) switches off checks that cannot be measured from that angle."],
   ["Smoothing", "One Euro filter per signal (min cutoff 1.2 Hz, beta 0.015, derivative cutoff 1 Hz)."],
   ["Rep segmentation", "Finite-state machine on the main joint angle: top → down → bottom → top, with a hysteresis gap, a minimum rep time and partial-rep detection."],
   ["Tracking confidence", `Per frame: landmark visibility × jitter score. Below ${FRAME_MIN} no live cues are given. Per rep: mean frame confidence × dropout factor × frame-rate factor; below ${REP_MIN} (or under ${MIN_REP_FPS} analysed frames/s) the rep is counted but its form is not scored.`],
+  ["Exercise recognition", `A small temporal network looks at the last 2 s of movement and names it (one of the five exercises, or "no exercise"). If the counter closes a rep but the network is at least ${Math.round(DEFAULT_GATE_TAU * 100)}% sure the movement was something else, the rep is not counted. Trained on synthetic movement only.`],
   ["Rule score", "17 form rules with fixed penalties, 100 − Σ penalties. Drives the live cues."],
   ["Model score (server)", "A tree ensemble per exercise (scikit-learn gradient boosting; random forest for lunges, picked on a validation split) estimates the probability that the rep is clean. Trained on synthetic reps only; accuracy on real lifters is unknown. Reported as uncertain below a validated confidence, and withheld when a feature is outside the training range."],
   ["Analytics (server)", "Fatigue: change-point on a per-rep index of lift time, range of motion and score, with a t-test gate. Progress: MongoDB aggregations."],
@@ -52,6 +55,17 @@ export default function About() {
             <li key={k}><span className="step num">{i + 1}</span><div><b>{k}</b><p className="muted">{v}</p></div></li>
           ))}
         </ol>
+      </section>
+
+      <section className="panel" data-testid="cv-panel">
+        <h2>Where the camera works best</h2>
+        <p className="muted">
+          Measured on synthetic movement filmed from eight directions: reps are counted about three times more accurately
+          from the side or at 45° than from straight in front or behind. Push-ups are hardest to count from behind and to
+          the side, squats and lunges from the front. Dim rooms are fine down to roughly a tenth of normal light; below that
+          FormFit asks you to add light rather than brightening the picture, because brightening made pose tracking worse.
+          Full results: docs/COMPUTER_VISION.md in the repository.
+        </p>
       </section>
 
       <section className="panel" aria-labelledby="model-h" data-testid="model-panel">

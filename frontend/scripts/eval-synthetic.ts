@@ -9,9 +9,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 import type { Point } from "../src/pose/angles";
 import { PoseSession } from "../src/pose/engine";
+import { ExerciseRecognizer, type TcnModel } from "../src/pose/exercise";
 import type { ExerciseId } from "../src/pose/rules";
 
-type Job = { id: string; file: string; exercise: ExerciseId; guard?: boolean | Record<string, number | boolean> };
+// gate: veto threshold for the exercise-TCN false-rep gate (omit or 0 = no recognizer)
+type Job = { id: string; file: string; exercise: ExerciseId; guard?: boolean | Record<string, number | boolean>; gate?: number };
 type Frames = { width: number; height: number; frames: { t: number; lm: number[][] | null }[] };
 
 const [jobsPath, outPath] = process.argv.slice(2);
@@ -21,6 +23,8 @@ if (!jobsPath || !outPath) {
 }
 const { jobs }: { jobs: Job[] } = JSON.parse(readFileSync(jobsPath, "utf8"));
 const cache = new Map<string, Frames>();
+let tcn: TcnModel | null = null;
+const getTcn = () => (tcn ??= JSON.parse(readFileSync(new URL("../public/models/exercise_tcn.json", import.meta.url), "utf8")) as TcnModel);
 const results = [];
 let totalMs = 0, totalFrames = 0;
 for (const job of jobs) {
@@ -31,7 +35,9 @@ for (const job of jobs) {
     cache.set(job.file, data);
   }
   const guard = job.guard === true ? {} : job.guard || false;
-  const s = new PoseSession(job.exercise, { guard });
+  const s = new PoseSession(job.exercise, {
+    guard, recognizer: job.gate ? new ExerciseRecognizer(getTcn()) : null, gateTau: job.gate ?? 0,
+  });
   const aspect = data.width / data.height;
   let usable = 0;
   const t0 = performance.now();
@@ -45,7 +51,7 @@ for (const job of jobs) {
   results.push({
     id: job.id, exercise: job.exercise, frames: data.frames.length, frames_usable: usable,
     ms_per_frame: Math.round((ms / Math.max(1, data.frames.length)) * 1000) / 1000,
-    guard: s.guard ? s.guard.stats : null,
+    guard: s.guard ? s.guard.stats : null, vetoed: s.vetoedReps,
     reps: s.reps.map((r) => ({
       t: r.t, ecc_s: r.eccS, con_s: r.conS, score: r.score, faults: r.faults, scored: r.scored,
       confidence: r.confidence, min_angle: r.features.minAngle, max_angle: r.features.maxAngle,

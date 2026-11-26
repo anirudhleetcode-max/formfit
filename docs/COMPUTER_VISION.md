@@ -5,11 +5,11 @@ reps and form feedback, and how each stage was measured. The numbers in the tabl
 `experiments/run.py` with the configs in `experiments/configs/cv_*.json`. Each table names its run
 folder under `experiments/results/`.
 
-> **Read the data labels.** Most numbers here come from **synthetic** 3-D skeleton sequences
+> **Read the data labels.** Many numbers here come from **synthetic** 3-D skeleton sequences
 > (`backend/cv/skeleton.py`). They have exact ground truth, but they are not real people or real
-> MediaPipe output. Numbers on **real** video use the single bundled clip and an earlier 11-clip
-> run. Real-video landmark "accuracy" is agreement with MediaPipe's largest model, not with human
-> labels. Every table says which kind it is.
+> MediaPipe output. **Real** results: landmark accuracy against human labels on 493 COCO images, and
+> rep counting, exercise classification and false reps on 11 real exercise clips (217 reps). Real
+> results disagree with synthetic ones in places, and where they do, the real numbers win. Every table says which kind it is.
 
 ## 1. Image classification vs object detection vs pose estimation
 
@@ -97,14 +97,16 @@ wrist height).
 ## 4. Synthetic 3-D ground truth (`backend/cv/skeleton.py`)
 
 There is no downloadable dataset that has, for the same videos, keypoints, rep boundaries,
-exercise labels and form-fault labels across many camera angles. So the evaluation uses a 3-D
+exercise labels and form-fault labels across many camera angles. So most of the evaluation uses a 3-D
 kinematic generator:
 
 * **Bodies:** height 1.55–1.95 m, Winter (2009) segment ratios ± 5%.
 * **Movement:** forward kinematics plus two-bone IK for 5 exercises, with per-rep depth, tempo and
   injected faults. Examples: squat valgus, heel lift and balance-driven lean; push-up sag/pike and
-  elbow flare; curl drift and swing; press arch and short lockout; lunge depth and lean. There are
+  elbow flare; curl drift, swing and alternating arms; press arch and short lockout; lunge depth and lean. There are
   also 5 non-exercise distractors: idle, marching, arm waving, hip hinge and walking across.
+* **Nuisance factors randomised on purpose:** arm posture during squats and lunges (forward, chest,
+  hips, at the sides, behind the head) and squat stance width. See §7 for why.
 * **Camera:** pinhole projection at any yaw (0° = facing, 90° = side), height 0.5–1.5 m,
   45–65° FOV, landscape or portrait.
 * **Detector error model:** AR(1) pixel noise of 0.3–1% of body height, visibility from
@@ -115,11 +117,11 @@ kinematic generator:
 
 Splits (independent seeds): `train` 2,000, `val` 400, `test` 800 sequences; `test_hard` 600 (noise
 1.2–2.5%, occluders in 70%); `sweep` 600 (5 exercises × 8 yaws × 15, no occluders).
-Regenerate them with `python -m cv.dataset ...` (see `experiments/configs/cv_classification.json`).
+Regenerate them with the commands in §12.
 
 ## 5. Exercise classification: pose-based vs temporal (advanced comparison)
 
-Run: `experiments/results/20261126-143915-cv_classification` (**synthetic**). Six classes: 5 exercises
+Run: `experiments/results/20261126-170343-cv_classification` (**synthetic**). Six classes: 5 exercises
 plus `other` (idle, marching, arm waving, hip hinge, walking). Windows are 2 s (30 frames at 15 fps).
 
 | Model | What it sees | How |
@@ -128,44 +130,51 @@ plus `other` (idle, marching, arm waving, hip hinge, walking). Windows are 2 s (
 | **stats** | the window, summarised | mean / std / min / max / mean \|velocity\| of the angle and position features → gradient-boosted trees |
 | **tcn** (temporal) | the window, frame by frame | 1-D temporal CNN: 3 dilated conv layers (k = 5, 5, 3; dilation 1, 2, 4; 48 channels; receptive field 23 frames ≈ 1.5 s), global average + max pooling, linear head. 31,398 parameters. Trained with JAX (AdamW, 2,500 steps, augmentations: time warp 0.8–1.25×, feature noise, whole-joint dropout, mirroring) |
 
-Macro F1 (accuracy in brackets):
+Macro F1 on synthetic data:
 
 | Protocol | frame (pose-based) | stats | tcn (temporal) |
 |---|---|---|---|
-| Standard test, 17,007 windows | 0.993 (0.993) | **0.998** (0.998) | 0.996 (0.996) |
-| Hard test: 2–3× landmark noise, occluders in 70% of sequences | 0.981 | 0.940 | **0.985** |
-| 1-second windows (15 frames, resampled) | **0.987** | 0.956 | 0.961 |
-| **Cross-view**: trained on side/oblique cameras only, tested on front/rear | 0.811 | **0.960** | 0.942 |
-| Sequence level (majority vote over windows) | 0.995 acc. | 1.000 | 1.000 |
-| `other` class F1 on the hard test | 0.941 | 0.832 | **0.965** |
-| Latency per window, CPU, batch 1 | 16.2 ms | 6.5 ms | **0.16 ms** (NumPy), 0.9 ms (TypeScript in Node) |
+| Standard test, 17,000 windows | 0.987 | **0.995** | 0.993 |
+| Hard test: 2–3× landmark noise, occluders in 70% of sequences | 0.967 | 0.918 | **0.972** |
+| 1-second windows (15 frames, resampled) | **0.982** | 0.953 | 0.954 |
+| **Cross-view**: trained on side/oblique cameras only, tested on front/rear | 0.821 | **0.940** | 0.935 |
+| `other` class F1 on the hard test | 0.909 | 0.795 | **0.933** |
+| Latency per window, CPU, batch 1 | 16.8 ms | 7.0 ms | **0.14 ms** (NumPy), 0.9 ms (TypeScript in Node) |
+
+And on **real video** (`20261126-171149-cv_real_clips`; 493 windows from the 11 clips in
+`data/real_clips/manifest.json`, labelled with each clip's exercise; 4 exercises present, no press, no `other`):
+
+| | frame (pose-based) | tcn (temporal) |
+|---|---|---|
+| Window accuracy | **0.826** | 0.779 |
+| Macro F1 (present classes) | **0.700** | 0.625 |
+| Clips whose majority vote is right | 10 / 11 | 10 / 11 |
 
 What this shows:
 
-* **On clean data from familiar viewpoints all three are near-perfect.** The synthetic exercises are
+* **On synthetic data from familiar viewpoints all three are near-perfect.** The synthetic exercises are
   very distinct, so on in-distribution data this benchmark separates the models less than real
   footage would.
 * **Generalising to an unseen viewpoint is where a single frame fails.** A frontal squat frame looks
-  nothing like a side-on one, so the per-frame model drops to F1 0.81. Both temporal models drop
-  only to 0.94–0.96, because *how the joints move* (which angle oscillates, at what rhythm) changes
-  less with the viewpoint than the static shape does.
-* **Under heavy noise and occlusion the learned temporal model is best (0.985)** and is clearly the best at
-  telling exercise from non-exercise movement (`other` F1 0.965). The hand-made window statistics
-  are the most fragile here (0.94), because a few corrupted frames move the min/max features a lot.
-* **With very short windows the single-frame model wins.** One second is less than one rep, and
-  the temporal models were trained on 1.6–2.5 s of motion. A real system needs ≥ 2 s of
-  context before it trusts the temporal model.
-* **Speed:** the TCN is ~100× faster than the tree models on a window because it is a few small
-  matrix products, which is why it is the one shipped to the browser (`frontend/public/models/exercise_tcn.json`, 291 KB).
+  nothing like a side-on one, so the per-frame model drops to F1 0.82. Both temporal models stay at
+  0.94, because *how the joints move* changes less with the viewpoint than the static shape does.
+* **Under heavy noise and occlusion the learned temporal model is best (0.972)** and is clearly the best at
+  telling exercise from non-exercise movement (`other` F1 0.933). Hand-made window statistics are the most
+  fragile (0.918), because a few corrupted frames move min/max features a lot.
+* **With very short windows the single-frame model wins.** One second is less than one rep.
+* **On real video the order flips: the single-frame model is better (0.83 vs 0.78 window accuracy).**
+  The temporal model learned more about *synthetic motion* (exact tempo curves, rigid segments), and
+  that transfers worse than static pose shape does. Both models get the majority vote right on 10 of 11 clips.
+  Both fail completely on the one curl clip, which is a kneeling, no-weights, arms-out-to-the-sides variant that no
+  synthetic sequence resembles.
+* **Speed:** the TCN is ~100× faster than the tree models on a window, which is why it is the one shipped
+  to the browser (`frontend/public/models/exercise_tcn.json`, 292 KB). On real data its lower accuracy is
+  acceptable for its job (a conservative gate, §8). A model trained on labelled real clips is the clear next step.
 
 Online use: in the browser the body-size scale comes from the 30-frame window only, not the whole
-sequence. With window-only features the TCN scores macro F1 0.996 on 6,451 test windows
+sequence. With window-only features the TCN scores macro F1 0.992 on 6,449 synthetic test windows
 (`python -m cv.export_tcn`). A parity test (`pose/__tests__/exercise.test.ts`) checks that the TypeScript
 features and probabilities match NumPy to within 2·10⁻³.
-
-**Real video:** on the bundled squat clip every recognised window is classified `squat` (183 of 183). That is one
-clip, so it is a sanity check, not a measurement. Real exercise-classification F1 needs labelled
-clips of all five exercises and of non-exercise movement: **dataset required**.
 
 ## 6. Occlusion handling and incorrect-pose detection (`pose/guard.ts`)
 
@@ -193,37 +202,50 @@ for the same joints without a box. **Visibility alone does not detect occlusion 
 because the network hallucinates a plausible joint. Temporal plausibility checks and per-rep
 confidence are needed on top.
 
-Effect on rep counting (**synthetic**, `20261126-144743-cv_repcount`):
+Effect on rep counting (**synthetic**, `20261126-171003-cv_repcount`):
 
 | | Guard off | Guard on |
 |---|---|---|
-| Test: count MAE / exact | 1.464 / 49.5% | **1.437 / 52.3%** |
-| Test, sequences with an occluder: MAE / exact | 1.895 / 26.8% | **1.758 / 37.9%** |
-| Reps missed because of occlusion (test) | 115 | **89** (−23%) |
-| Hard test: MAE / exact | 1.679 / 40.1% | **1.584 / 47.0%** |
-| Hard test, reps missed because of occlusion | 224 | **168** (−25%) |
+| Test: count MAE / exact | 1.754 / 44.8% | **1.743 / 47.6%** |
+| Test, sequences with an occluder: MAE / exact | 2.065 / 22.6% | **1.917 / 33.9%** |
+| Reps missed because of occlusion (test) | 129 | **97** (−25%) |
+| Extra reps from tracking glitches / double counts (test) | 7 | **0** |
+| Hard test: MAE / exact | 2.154 / 33.9% | **2.053 / 38.8%** |
+| Hard test, reps missed because of occlusion | 241 | **181** (−25%) |
 | Engine time per frame (Node) | 0.008 ms | 0.012 ms |
 
-The guard is on by default in the app (Train and Upload).
+On the 11 real clips the guard changes nothing (same counts with and without). Those clips have no
+occlusion or swap events, which is consistent with it being harmless when tracking is clean. The guard is on by default in the app.
 
-## 7. Landmark detection accuracy, latency and low light (real frames)
+## 7. Landmark detection accuracy, latency and low light
 
-Run: `20261126-145152-cv_landmarks`, on `samples/squat_demo.webm` (213 frames at 15 fps, 640×360, a real person).
-**Reference = MediaPipe heavy on the unmodified frames.** These are agreement numbers, not accuracy
-against human labels. PCK@α: share of the 12 body joints within α × torso length of the reference.
+**Against human labels: COCO keypoints** (`experiments/results/20261126-coco_pck`, `python -m experiments.cv.coco_pck
+--parquet …`). 493 images of a single, clearly visible person (≥ 12 labelled joints, box ≥ 96×96 px) from the COCO
+2017 validation keypoints (Hugging Face mirror `rom1x38/COCO_keypoints`, val split). Each image is cropped to the person
+box + 25% and run in IMAGE mode. PCK uses the torso diameter (left shoulder to right hip). OKS uses the
+COCO sigmas, but with the box area instead of the segmentation area (not in this mirror), so it is slightly lenient.
 
-| Model | File | CPU latency / frame (median, p95) | Detection rate | PCK@0.05 | PCK@0.1 | PCK@0.2 | NME |
-|---|---|---|---|---|---|---|---|
-| **lite** (shipped) | 5.8 MB | **13.2 ms**, 19.1 ms | 100% | 0.518 | 0.887 | 0.980 | 0.059 |
-| full | 9.4 MB | 18.1 ms, 24.1 ms | 100% | 0.710 | 0.945 | 0.991 | 0.045 |
-| heavy (reference) | 30.7 MB | 57.2 ms, 66.7 ms | 100% | – | – | – | – |
+| Model | Person not detected | PCK@0.1 | PCK@0.2 | PCK@0.2, detected people only | mean OKS | OKS ≥ 0.5 / ≥ 0.75 |
+|---|---|---|---|---|---|---|
+| **lite** (shipped) | 39 / 493 (7.9%) | 0.574 | 0.760 | 0.822 | 0.789 | 88% / 79% |
+| full | 38 / 493 | 0.633 | 0.796 | 0.860 | 0.813 | 88% / 82% |
+| heavy | 36 / 493 | 0.683 | 0.819 | 0.880 | 0.832 | 90% / 84% |
+
+COCO photos (sports, street scenes, partial bodies, odd angles) are much harder than a person filming
+a workout, so these are lower bounds for FormFit's use. Per joint, lite's PCK@0.2 is lowest for ankles,
+knees and hips, the joints the leg exercises depend on (per-joint table in the result JSON).
+
+**Model variants and latency on the bundled workout clip** (`20261126-145152-cv_landmarks`, 213 frames,
+640×360; reference = heavy on the same frames, so these are agreement numbers):
+
+| Model | File | CPU latency / frame (median, p95) | PCK@0.05 | PCK@0.1 | PCK@0.2 | NME |
+|---|---|---|---|---|---|---|
+| **lite** (shipped) | 5.8 MB | **13.2 ms**, 19.1 ms | 0.518 | 0.887 | 0.980 | 0.059 |
+| full | 9.4 MB | 18.1 ms, 24.1 ms | 0.710 | 0.945 | 0.991 | 0.045 |
+| heavy (reference) | 30.7 MB | 57.2 ms, 66.7 ms | – | – | – | – |
 
 Python MediaPipe on 4 CPU cores, VIDEO mode. The browser uses the WASM build of the same model with a GPU delegate
 where available. All three models count the clip's 4 reps.
-
-**Human-labelled accuracy:** `python -m experiments.cv.coco_pck` computes PCK and OKS against COCO
-val2017 keypoint labels (single-person crops, 17 COCO joints mapped to BlazePose). The COCO files could
-not be downloaded in the environment used for these runs: **dataset required before evaluation**.
 
 **Low light** (lite model; frames darkened in linear light with shot and read noise and 8-bit quantisation):
 
@@ -241,86 +263,100 @@ not be downloaded in the environment used for these runs: **dataset required bef
   So FormFit does **not** enhance frames. It measures the scene brightness once a second
   (`lib/lighting.ts`, a 32×18 thumbnail) and shows "Room is dark: add light in front of you" below
   luminance 0.11, where accuracy starts to fall off.
-* Low-light handling, then, is: warn the user before accuracy drops, and let tracking confidence
-  abstain from scoring if it drops anyway.
 
-## 8. Rep counting, false repetitions and posture (synthetic, through the shipped TypeScript engine)
+**A sim-to-real lesson found on the real clips.** The first version of the generator always had
+squatters hold their arms forward and lungers put their hands on their hips. The TCN learned that
+shortcut: on real front-view squats (hands at the waist) it answered "lunge" in **100%** of windows, and the gate
+(§8) then blocked real reps. Comparing real and synthetic features showed wrist height as the biggest gap
+(real squats 0.67, synthetic squats 0.08, synthetic lunges 0.80 in body units). Randomising arm posture and
+squat stance width in the generator fixed it: real front-view squats are now classified correctly in 86–100%
+of windows. Because the cause was found by looking at these clips, the post-fix real-clip numbers are not
+a fully blind test. The earlier run is kept as `20261126-165737-cv_real_clips`.
 
-Run: `20261126-144743-cv_repcount`. Every number comes from `frontend/src/pose/engine.ts` itself
-(`scripts/eval-synthetic.ts`) on the 800-sequence test set, with the guard on unless stated.
+## 8. Rep counting, false repetitions and posture
+
+Synthetic numbers come from run `20261126-171003-cv_repcount`, real-video numbers from `20261126-171149-cv_real_clips`.
+Every number comes from `frontend/src/pose/engine.ts` itself (`scripts/eval-synthetic.ts`), with the guard on unless stated.
 A predicted rep matches a ground-truth rep if it closes between the GT turning point and GT end + 1.2 s.
 
-**Rep counting accuracy** (618 exercise sequences, 5,008 reps):
+**Rep counting accuracy, real video** (11 clips, 217 reps; 6 filmed people, 5 rendered avatars):
+
+| Configuration | MAE (reps/clip) | Exact | Within ±1 | Reps counted |
+|---|---|---|---|---|
+| Engine only | 4.27 | 45% | 73% | 172 / 217 |
+| + guard | 4.27 | 45% | 73% | 172 / 217 |
+| + guard + gate (default) | 6.45 | 36% | 55% | 146 / 217 |
+| + gate, user taps "Count anyway" on the curl clip | 4.45 | 36% | 64% | 170 / 217 |
+
+* The gate costs 26 real reps: all 24 on the kneeling curl variant, and 2 on one push-up clip.
+* That is why vetoed reps are **kept, not dropped**. The HUD shows "N not counted" and a "Count anyway"
+  button that restores them and turns the gate off for the session.
+* One filmed squat clip (`pub_squat_042`, 40 shallow "drop squats") gets 0 reps in every configuration:
+  the knee never goes below the 115° bottom threshold. That clip alone accounts for 40 of the 45-rep shortfall.
+* The earlier real run (2026-09-16) reported MAE 4.0 and 64% exact. The engine is the same; the landmarks
+  were re-extracted with a newer MediaPipe Python build (1.2.3), which moved two clips by one rep each.
+
+**Rep counting accuracy, synthetic** (618 exercise sequences, 5,008 reps):
 
 | | MAE (reps/set) | Exact | Within ±1 | Rep precision | Rep recall |
 |---|---|---|---|---|---|
-| All | 1.44 | 52% | 70% | **1.000** | 0.823 |
-| Squat | 1.94 | 34% | – | 1.000 | 0.769 |
+| All | 1.74 | 48% | 65% | **1.000** | 0.785 |
+| Squat | 2.02 | 33% | – | 1.000 | 0.759 |
 | Push-up | 3.22 | 31% | – | 1.000 | 0.612 |
-| Curl | 0.58 | 63% | – | 1.000 | 0.931 |
+| Curl | 2.15 | 40% | – | 1.000 | 0.744 |
 | Press | **0.11** | **92%** | – | 1.000 | **0.987** |
-| Lunge | 1.55 | 40% | – | 1.000 | 0.792 |
+| Lunge | 1.32 | 43% | – | 1.000 | 0.823 |
 
-(Earlier real-video result, 11 clips / 217 reps: MAE 4.0, exact 64%, ±1 82%; on the 5 hand-verified
-clips MAE 0.2. See the README.)
+On synthetic data the counter almost never invents a rep from the person's own set (precision 1.000). It errs by
+**missing** reps. Curl recall is low because half the synthetic curl sets alternate arms, and the engine
+follows the more visible arm only. Push-ups seen from behind are covered in §9. The miss taxonomy (test, guard on):
 
-The counter almost never invents a rep from the person's own set (precision 1.000; 1 double count in
-4,122 reps). It errs by **missing** reps. The miss taxonomy:
-
-| Why a rep was missed | Count (test) |
+| Why a rep was missed | Count |
 |---|---|
-| Partial range: the rep never reached the bottom threshold (by design the app says "Go lower" instead of counting) | 412 |
-| Unfavourable view (front/rear for squat, lunge, curl, push-up) | 166 |
-| Occlusion during the rep | 89 |
-| Body partly out of frame | 73 |
-| Other (mostly push-ups with flared elbows, see below) | 147 |
+| Partial range: the rep never reached the bottom threshold (by design the app says "Go lower" instead of counting) | 422 |
+| Unfavourable view (front/rear for squat, lunge, curl, push-up) | 162 |
+| Occlusion during the rep | 97 |
+| Body partly out of frame | 88 |
+| Other (mostly the non-working arm in alternating curls, and push-ups with flared elbows) | 308 |
 
-**False repetitions.** Reps counted from the person's own set are rare, but reps counted from *the
-wrong movement* are not. Every test sequence was also run with every other exercise selected (the user picked "curl"
-but is doing push-ups, or is just waving):
+**False repetitions: the wrong movement being counted.** Every clip and test sequence was also run with every
+*other* exercise selected (the user picked "curl" but is doing push-ups, or is just waving):
 
-| Selected → actually doing | False reps / min, no gate | With TCN gate (τ = 0.8) |
+| | No gate | With TCN gate (τ = 0.8) |
 |---|---|---|
-| push-up counter ← curls | 16.2 | 0.0 |
-| curl counter ← presses | 15.6 | 0.0 |
-| press counter ← curls | 15.2 | 0.12 |
-| lunge counter ← squats | 15.2 | 0.04 |
-| push-up counter ← presses | 15.1 | 0.0 |
-| press counter ← arm waving | 8.7 | 0.34 |
-| squat counter ← lunges | 8.4 | 0.03 |
-| lunge counter ← walking | 2.8 | 0.0 |
-| **All mismatched combinations** | **4.51** | **0.012** |
-| **Non-exercise movement only** | **1.10** | **0.015** |
+| **Real video**, wrong exercise selected | **9.42 reps/min** (317 reps) | **0.15 reps/min** (5 reps) |
+| Synthetic, all mismatched combinations | 4.23 reps/min | 0.018 reps/min |
+| Synthetic, non-exercise movement only | 1.10 reps/min | 0.046 reps/min |
+| Synthetic: push-up counter ← curls / curl counter ← presses / lunge counter ← squats | 12.8 / 15.6 / 15.5 | 0.02 / 0.04 / 0.06 |
+| Real: press, curl, push-up and lunge counters ← squats | 51 / 43 / 47 / 46 reps | 0 / 0 / 0 / 0 |
+| Real: squat counter ← lunges | 69 reps | 5 reps |
 
 * Why: each counter watches one joint angle. Any movement that swings that angle through both thresholds is a
-  "rep", including an elbow bend during a curl when the push-up counter is selected.
+  "rep", including the knee bend of a lunge when the squat counter is selected.
 * **The fix is the temporal classifier as a gate.** When the counter closes a rep, the TCN looks at
   the last 2 s. If it is ≥ τ confident that this was a *different* movement, the rep is not counted
   and the user hears "That didn't look like a squat, not counted".
-* Cost on correctly selected exercises: 4 of 4,122 true reps vetoed (recall 0.823 → 0.822).
-* τ = 0.8 is shipped. τ = 0.5 removes slightly more false reps (0.002/min) but is less forgiving of
-  real-world movements the synthetic training data does not cover.
-* Caveat: the gate was tested on the same synthetic distribution it was trained on. The real clip
-  agrees (with "lunge" selected, the 4 squat reps are all vetoed), but that is one clip.
+* Cost: synthetic, 4 of 3,931 true reps; real, 26 of 172 (24 of them on the out-of-distribution curl variant,
+  recoverable with one tap). τ = 0.8 is shipped (τ = 0.5 blocks slightly more synthetic false reps, 0.005/min, but vetoes more true reps).
 
-**Posture evaluation** (rule faults vs faults computed from the true 3-D pose; 4,121 matched reps,
-78% confident enough to be scored):
+**Posture evaluation (synthetic).** Rule faults are compared with faults computed from the true 3-D pose.
+3,931 reps were matched and 78.5% were confident enough to be scored:
 
 | | Precision | Recall | Support |
 |---|---|---|---|
-| Any fault (rep is faulty) | 0.746 | 0.643 | 1,254 faulty reps (1,702 clean) |
-| Side view | 0.848 | 0.807 | 296 |
-| Oblique | 0.781 | 0.639 | 374 |
-| Front | 0.468 | 0.536 | 138 |
-| Rear | 0.602 | 0.391 | 151 |
+| Any fault (rep is faulty) | 0.774 | 0.631 | 1,289 faulty reps (1,560 clean) |
+| Side view | 0.883 | 0.758 | 359 |
+| Oblique | 0.801 | 0.644 | 362 |
+| Front | 0.519 | 0.533 | 150 |
+| Rear | 0.584 | 0.460 | 113 |
 
-Per fault, high precision / low recall: elbow drift 1.00 / 0.66, torso swing 0.99 / 0.59, back arch
-0.97 / 0.32, no lockout 0.95 / 0.10, partial extension 1.00 / 0.10. These rules rarely raise false
+Many rules have high precision and low recall: elbow drift 0.99 / 0.65, torso swing 0.98 / 0.63, back arch
+0.97 / 0.32, no lockout 1.00 / 0.09, partial extension 0.86 / 0.05. They rarely raise false
 alarms but miss mild cases, because **2-D projection under-reads 3-D angles**: an arm that stops 20°
 short looks straight when it points partly toward the camera. Hip sag (0.72 / 0.93) and hip pike
 (0.57 / 1.00) are the reverse: very sensitive, with false alarms from foreshortening. Shallow push-up
-(0.05 / 0.88) has almost no true cases here and many false alarms from flared elbows. Knee valgus (0.51 / 0.71)
-needs a frontal view to be measured at all.
+(0.05 / 0.88) has almost no true cases here and many false alarms from flared elbows. Knee valgus (0.58 / 0.69)
+needs a frontal view to be measured at all. **Real-video posture precision/recall still needs coach-labelled reps.**
 
 ## 9. Performance under different camera angles (synthetic sweep)
 
@@ -328,23 +364,25 @@ needs a frontal view to be measured at all.
 
 | Yaw | Rep MAE | Exact | Rep recall | Worst exercise (MAE) | Posture P / R (any fault) | Reps form-scored |
 |---|---|---|---|---|---|---|
-| 0° (front) | 2.92 | 37% | 0.61 | squat 5.9, lunge 4.7 | 0.57 / 0.63 | 61% |
-| 45° | 0.85 | 59% | 0.89 | lunge 1.9 | 0.83 / 0.77 | 77% |
-| **90° (side)** | **0.80** | 59% | **0.90** | push-up 2.0 | **0.90 / 0.87** | 76% |
-| 135° | 1.99 | 48% | 0.75 | push-up 7.2 | 0.81 / 0.66 | 72% |
-| 180° (rear) | 2.21 | 49% | 0.73 | lunge 6.0 | 0.35 / 0.49 | 66% |
-| 225° | 2.19 | 48% | 0.73 | push-up 7.6 | 0.85 / 0.77 | 76% |
-| **270° (side)** | **0.81** | **64%** | **0.90** | curl 1.3 | **0.93 / 0.85** | 78% |
-| 315° | 0.99 | 59% | 0.88 | squat 2.5 | 0.77 / 0.65 | 82% |
+| 0° (front) | 3.11 | 29% | 0.58 | lunge 4.9 | 0.68 / 0.67 | 69% |
+| 45° | 1.13 | 49% | 0.85 | curl 2.5 | 0.86 / 0.73 | 76% |
+| **90° (side)** | **1.04** | 56% | **0.87** | curl 2.2 | **0.90 / 0.82** | 71% |
+| 135° | 2.28 | 47% | 0.72 | push-up 7.2 | 0.82 / 0.66 | 66% |
+| 180° (rear) | 2.40 | 44% | 0.70 | lunge 5.1 | 0.43 / 0.53 | 70% |
+| 225° | 2.56 | 41% | 0.68 | push-up 7.6 | 0.84 / 0.67 | 72% |
+| **270° (side)** | **1.01** | **63%** | **0.88** | curl 2.1 | **0.93 / 0.82** | 77% |
+| 315° | 1.52 | 51% | 0.81 | squat 2.5 | 0.82 / 0.74 | 82% |
 
-* **Side and 45° views are 3× more accurate than front and rear for counting.** From the front a
-  squat's knee flexion points at the camera and the 2-D knee angle barely changes (squat MAE 5.9).
+* **Side views are 2–3× more accurate than front and rear for counting** (MAE ≈ 1.0 vs 2.4–3.1). From the front a
+  squat's or lunge's knee flexion points at the camera and the 2-D knee angle barely changes.
 * **Push-ups filmed from behind-and-to-the-side (135°/225°) are the worst cell.** With elbows flared
   15–55°, the 2-D elbow angle at the bottom can read 20–30° larger than the true angle and then never crosses the bottom threshold.
-* **Posture precision collapses from the rear (0.35)** because lean and depth are hidden.
-* The press is view-independent (MAE 0.0 at every yaw), because the elbow angle is large in every projection.
+* **Posture precision collapses from the rear (0.43)** because lean and depth are hidden.
+* The press is view-independent (MAE ≤ 0.2 at every yaw), because the elbow angle is large in every projection.
+* The real clips agree: side-view push-ups and lunges are counted within 0–2 reps, and the failures are
+  front-view squats (`pub_squat_042`).
 * The app's setup hints ("Side-on or 45°") match these numbers. The exercise classifier, by contrast,
-  is view-robust: accuracy ≥ 0.997 at every yaw (§5).
+  is view-robust on synthetic data: accuracy ≥ 0.985 at every yaw for all three models.
 
 ## 10. Latency budget (per analysed frame)
 
@@ -375,16 +413,26 @@ python -m experiments.run --config experiments/configs/cv_classification.json   
 python -m experiments.run --config experiments/configs/cv_repcount.json         # ~5 min
 python -m experiments.run --config experiments/configs/cv_landmarks.json        # ~3 min
 (cd backend && python -m cv.export_tcn)                                         # browser weights + parity fixture
+python -m experiments.real_clips.fetch                                           # 11 real clips (Hugging Face + bundled)
+python -m experiments.run --config experiments/configs/real_clips_repcount.json  # extracts landmarks
+python -m experiments.run --config experiments/configs/cv_real_clips.json        # guard / gate / classification on real clips
+# COCO keypoints val split (436 MB parquet): huggingface.co/datasets/rom1x38/COCO_keypoints, data/val-00000-of-00001.parquet
+python -m experiments.cv.coco_pck --parquet data/coco/val.parquet --model lite --max 1000 --out lite.json
 ```
 
 ## 12. Limitations
 
-* The headline numbers are **synthetic**. The generator's error model (noise, swaps, occluders) is a
-  guess at MediaPipe's behaviour, and its bodies are rigid stick figures. Treat the numbers as
-  *relative* comparisons (which model, which view, guard on vs off), not as real-world accuracy.
-* Real-video evidence is the bundled clip plus the earlier 11-clip rep-count run. Exercise-classification
-  F1, posture precision/recall and the false-rep rate still need labelled real footage.
-* Landmark accuracy on real frames is agreement with `heavy`, not with human labels. The COCO script is
-  provided but was not run here.
-* The temporal gate can veto a real rep of an unusual variant (sumo squat, deficit push-up) that looks
-  unlike the synthetic training data. That is why τ is conservative and why the vetoed count is shown in the HUD.
+* Many headline numbers are **synthetic**. The generator's error model (noise, swaps, occluders) is a
+  guess at MediaPipe's behaviour, and its bodies are rigid stick figures. Treat those numbers as
+  *relative* comparisons (which model, which view, guard on vs off), not as real-world accuracy. Where real and
+  synthetic disagree (exercise classification: the single-frame model is better on real video), trust the real result.
+* The real-video set is small: 11 clips, 4 exercises, no press and no non-exercise footage; 5 of the clips are rendered avatars.
+  One clip (kneeling curls) is far outside what the classifier was trained on. The sim-to-real fix in §7 was found by
+  looking at these clips, so they are not a fully blind test of it.
+* Posture precision/recall on real video still needs reps labelled by a coach. No public dataset has them.
+* COCO OKS uses the box area instead of the segmentation area (not in the mirror used), which makes it slightly lenient.
+  PCK is unaffected.
+* The temporal gate can veto real reps of an unusual variant (it vetoed all 24 kneeling curls). Vetoed reps are kept,
+  and one tap ("Count anyway") restores them and turns the gate off for the session.
+* The next step with the best expected payoff is training the exercise classifier on labelled real clips,
+  or fine-tuning the synthetic one on them.

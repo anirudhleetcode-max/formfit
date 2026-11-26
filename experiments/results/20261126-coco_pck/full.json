@@ -1,0 +1,39 @@
+{
+ "model": "full",
+ "people": 493,
+ "not_detected": 38,
+ "source": "val.parquet",
+ "oks_area": "bounding-box area (lenient approximation)",
+ "pck": {
+  "0.05": 0.3626,
+  "0.1": 0.6331,
+  "0.2": 0.7961
+ },
+ "pck_detected_only": {
+  "0.05": 0.3917,
+  "0.1": 0.6839,
+  "0.2": 0.86
+ },
+ "pck@0.2_per_joint": {
+  "nose": 0.91,
+  "l_eye": 0.919,
+  "r_eye": 0.931,
+  "l_ear": 0.879,
+  "r_ear": 0.907,
+  "l_shoulder": 0.849,
+  "r_shoulder": 0.858,
+  "l_elbow": 0.804,
+  "r_elbow": 0.818,
+  "l_wrist": 0.811,
+  "r_wrist": 0.815,
+  "l_hip": 0.71,
+  "r_hip": 0.709,
+  "l_knee": 0.657,
+  "r_knee": 0.642,
+  "l_ankle": 0.657,
+  "r_ankle": 0.668
+ },
+ "mean_oks": 0.8126,
+ "oks>=0.5": 0.8824,
+ "oks>=0.75": 0.8215
+}

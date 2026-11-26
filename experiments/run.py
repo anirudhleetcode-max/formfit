@@ -58,6 +58,9 @@ def main() -> None:
     elif task == "cv_repcount":
         from experiments.cv.repcount import run as run_rep
         report = run_rep(cfg, out)
+    elif task == "cv_real_clips":
+        from experiments.cv.real_clips_cv import run as run_rc
+        report = run_rc(cfg, out)
     elif task == "cv_landmarks":
         from experiments.cv.landmarks import run as run_lm
         report = run_lm(cfg, out)

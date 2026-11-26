@@ -27,8 +27,10 @@ export const EMPTY_HUD: HudState = {
 
 const movementLabel = (c: string) => (c in EXERCISES ? EXERCISES[c as ExerciseId].label : "No exercise");
 
-export function Stage({ videoRef, canvasRef, mirrored, hud, placeholder, children, exercise }: {
+export function Stage({ videoRef, canvasRef, mirrored, hud, placeholder, children, exercise, onAcceptVetoed }: {
   exercise?: ExerciseId;
+  /** "Count them anyway": the user says the reps the gate rejected were real (an exercise variant) */
+  onAcceptVetoed?: () => void;
   videoRef: RefObject<HTMLVideoElement | null>;
   canvasRef: RefObject<HTMLCanvasElement | null>;
   mirrored: boolean;
@@ -80,6 +82,11 @@ export function Stage({ videoRef, canvasRef, mirrored, hud, placeholder, childre
             Movement: <b>{movementLabel(hud.seen.label)}</b> {Math.round(hud.seen.p * 100)}%
             {!!hud.vetoed && <span> · {hud.vetoed} not counted</span>}
           </p>
+        )}
+        {!!hud.vetoed && onAcceptVetoed && (
+          <button type="button" className="btn vetoed-btn" onClick={onAcceptVetoed} data-testid="accept-vetoed">
+            Count {hud.vetoed === 1 ? "it" : `all ${hud.vetoed}`} anyway (this is a {exercise ? EXERCISES[exercise].label.toLowerCase() : "variant"})
+          </button>
         )}
         <div className="hud-faults" data-testid="last-rep-feedback">
           {last && !last.scored && (
