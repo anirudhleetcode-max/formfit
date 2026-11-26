@@ -68,7 +68,9 @@ flowchart LR
 | 7 | Tracking confidence | `pose/confidence.ts` | **Per frame:** `visibility score × jitter score`. The visibility score maps landmark visibility 0.3→0 and 0.8→1, averaging the minimum and the mean over the required joints. The jitter score comes from the second difference of the raw angle (EMA, α = 0.15): noise ≤ 2° → 1, ≥ 10° → 0. **Per rep:** `mean frame confidence × (0.2 + 0.8 × share of frames with a usable pose) × frame-rate factor` (5 fps → 0, 10 fps → 1). |
 | 8 | Per-rep features | `pose/engine.ts: aggregateRep` | min/max angle, ROM, eccentric/concentric time, max torso lean, torso sway, min hip line, min valgus ratio, max elbow drift, depth, heel rise. |
 | 9 | Rule score | `pose/rules.ts: evaluateRep` | 17 fault rules with fixed penalties: `score = 100 − Σ penalties`. The same rules drive the live cues and the red joints. |
+| 3b | Landmark guard | `pose/guard.ts` | Online repair before any geometry: undo left/right identity swaps, reject joints moving faster than 8 torso lengths/s (incorrect pose), hold joints hidden ≤ 0.6 s at their last trusted position with lowered visibility. |
 | 10 | Confidence-aware feedback | `pose/engine.ts`, `components/Stage.tsx` | Frame confidence < **0.4**: no live cues, no red joints, and the HUD says "Can't see your *knees* clearly". Rep confidence < **0.5** (or < 8 analysed frames/s): the rep is **counted but not scored** (`score: null`, `scored: false`, `abstain_reason`). |
+| 10b | Exercise recognition + false-rep gate | `pose/exercise.ts` | A temporal CNN on the last 2 s of normalised landmarks (15 fps) labels the movement (5 exercises or `other`). When the counter closes a rep and the TCN is ≥ 0.8 sure it was a different movement, the rep is set aside, not counted. A "Count anyway" button restores set-aside reps and turns the gate off for the session. |
 | 11 | Model score (server) | `app/services/form_model.py` | One classifier per exercise gives `P(clean)`. If any feature is outside the training range (0.5–99.5% quantiles ± 10%), the status is `out_of_distribution` and no score is given. If `max(P, 1 − P)` is below the confidence that reached 95% accuracy on validation, the status is `uncertain`. Reps the browser did not score get `not_scored`. |
 | 12 | Analytics (server) | `app/services/analytics.py` | Fatigue change-point per session. Weekly volume, daily scores, recurring faults and personal bests via `$facet` aggregation. |
 | 13 | API → UI | `routers/`, `pages/` | Rule score, model score + status, rep confidence and abstain reason are shown per rep. The About page shows the model card and the measured evaluation numbers. |
@@ -94,11 +96,32 @@ smaller ROM and a lower score. A single least-squares mean-shift change point is
 shift is ≥ 0.12, the Welch t-statistic is ≥ 3.0 and the overall slope is positive (at least 6 reps). Details and
 rates: [experiments/reports/fatigue_synthetic.md](experiments/reports/fatigue_synthetic.md).
 
-### Not built on purpose
+### Computer vision: classification, temporal model, robustness
 
-- **Automatic exercise recognition.** It was skipped because it could not be validated: the real clips available here are
-  11 in total, with one curl and no press, and a classifier checked only on synthetic skeletons would be exactly the kind of unverified
-  claim this project avoids. The user picks the exercise.
+Full write-up with every table: **[docs/COMPUTER_VISION.md](docs/COMPUTER_VISION.md)**. It also covers the BlazePose architecture,
+coordinate normalization, and image classification vs object detection vs pose estimation.
+
+- **Synthetic 3-D ground truth** (`backend/cv/skeleton.py`): a kinematic generator renders the 5 exercises and 5 non-exercise
+  movements at any camera angle, with a MediaPipe-like error model (noise, self-occlusion, occluders, dropouts, left/right swaps).
+  It has exact labels for reps, faults and exercise. **Synthetic, not real people**; every result below says which kind it is.
+- **Landmark accuracy against human labels (real):** on 493 single-person COCO images, lite reaches PCK@0.2 **0.76** (0.82 on
+  detected people) and OKS 0.79; full 0.80 / 0.81; heavy 0.82 / 0.83.
+- **Exercise classification, pose-based vs temporal** (`backend/cv/classify.py`): a per-frame model, window statistics and a
+  31k-parameter temporal CNN. On synthetic data from unseen camera views the per-frame model drops to macro F1 **0.82** and the TCN holds
+  **0.94**. On **real** clips the per-frame model is better (window accuracy 0.83 vs 0.78). The TCN runs in the browser
+  (`pose/exercise.ts`, 0.9 ms per 2-s window).
+- **False repetitions (real):** with the wrong exercise selected, the angle-based counter took **9.4 reps/min** from other movements
+  on real video. The TCN gate cuts this to **0.15/min**. It also vetoed 26 real reps, 24 of them on a kneeling-curl variant, so vetoed reps
+  are kept and a "Count anyway" button restores them.
+- **Sim-to-real lesson:** the first TCN learned "hands on hips = lunge" from the generator and called every real front-view squat a lunge.
+  Randomising arm posture fixed it (86–100% of real squat windows now correct). Details in the doc, §7.
+- **Occlusion and incorrect poses** (`pose/guard.ts`): left/right swap repair, rejection of joints moving faster than a limb can,
+  and ≤ 0.6 s gap filling. Reps missed to occlusion drop by 25% (synthetic). On real frames, MediaPipe reports boxed-over
+  joints with visibility 0.71 while they are wrong (PCK@0.1 0.15), so visibility alone cannot detect occlusion.
+- **Low light** (real frames): lite keeps PCK@0.1 0.83 (vs heavy) at 12% light. Gain and gamma + CLAHE enhancement made it
+  *worse*, so the app warns "Room is dark" instead of enhancing.
+- **Camera angle:** side views count reps 2–3× more accurately than front and rear (MAE ≈ 1.0 vs 2.4–3.1, synthetic).
+- **Latency:** MediaPipe lite 13 ms/frame (CPU), full 18 ms, heavy 57 ms. Everything after the pose model costs < 0.3 ms per frame.
 
 ## Features
 
@@ -135,16 +158,17 @@ backend/
     routers/      sessions.py · stats.py (/api/stats/overview, /api/model)
     services/     form_model.py (load once, abstain) · analytics.py (fatigue) · sessions.py (summaries)
   ml/             simulate.py · features.py · rules.py · train.py · evaluate.py · eval_fatigue.py · runinfo.py
+  cv/             skeleton.py (3-D synthetic sequences) · dataset.py · normalize.py · classify.py · engine_eval.py · export_tcn.py
     artifacts/    form_model.joblib · form_model.card.json · metrics.json · fatigue_eval.json · real_clips_eval.json
   scripts/        seed.py (demo user) · dump_landmarks.py (record a test fixture)
   tests/          API, ML, robustness (pytest, real MongoDB, throwaway DB)
 frontend/
-  src/pose/       angles.ts · fsm.ts · rules.ts · confidence.ts · cues.ts · engine.ts (+ __tests__)
+  src/pose/       angles.ts · fsm.ts · rules.ts · confidence.ts · cues.ts · guard.ts · exercise.ts · engine.ts (+ __tests__)
   src/pages/      Train · Upload · History · SessionDetail · Progress · About · Login
   src/components/ Stage (video + HUD) · Feedback (confidence meter, toasts, dialogs, skeletons) · charts · Shell
   scripts/        copy-wasm.mjs · fetch-model.mjs · eval-clips.ts (real-clip replay through src/pose)
   public/models/  pose_landmarker_lite.task
-experiments/      run.py · configs/ · real_clips/ (fetch, extract, evaluate) · results/ · reports/
+experiments/      run.py · configs/ · real_clips/ (fetch, extract, evaluate) · cv/ (classification, repcount, landmarks, coco_pck) · results/ · reports/
 data/real_clips/  manifest.json · README.md (downloaded clips and landmarks are git-ignored)
 e2e/              test_e2e.py · run_e2e.sh
 samples/          squat_demo.webm (CC BY 3.0) + ATTRIBUTION.md
@@ -239,6 +263,9 @@ python -m experiments.run --config experiments/configs/form_classifier_synthetic
 python -m experiments.run --config experiments/configs/form_classifier_small_data.json
 python -m experiments.run --config experiments/configs/fatigue_synthetic.json
 python -m experiments.run --config experiments/configs/real_clips_repcount.json
+python -m experiments.run --config experiments/configs/cv_classification.json   # needs the synthetic datasets, see docs/COMPUTER_VISION.md §11
+python -m experiments.run --config experiments/configs/cv_repcount.json
+python -m experiments.run --config experiments/configs/cv_landmarks.json
 ```
 
 Each run writes `experiments/results/<timestamp>-<name>/` with a config snapshot, `env.json` (git commit, Python and
@@ -283,6 +310,9 @@ Six clips show filmed people and five show rendered 3D avatars. **This is a very
   Whether those scores are *right* is **not measured yet** (there are no fault labels).
 - Browser (WASM) vs Python landmarks on the sample clip: mean difference 0.004 frame units, same 4-rep count
   (`20260916-162813-browser_parity`).
+- **Re-run on 2026-11-26** (`20261126-165409-real_clips_repcount`, landmarks re-extracted with MediaPipe Python 1.2.3):
+  MAE 4.27, exact 45%, within ±1 73% (172 / 217). The engine is unchanged; the newer MediaPipe build moved two clips by one rep each.
+  With the landmark guard the counts are identical. With the default exercise gate see [docs/COMPUTER_VISION.md](docs/COMPUTER_VISION.md) §8.
 - Real-video form accuracy: **Dataset required before evaluation.** Real-set fatigue: **Dataset required before evaluation.**
 
 The real results are much less clean than the synthetic ones: a shallow drop-squat clip got 0 of 40 reps counted.

@@ -29,7 +29,8 @@ SHOTS.mkdir(parents=True, exist_ok=True)
 def browser():
     assert Path(FAKE_CAM).exists(), f"fake camera file missing: {FAKE_CAM}"
     with sync_playwright() as p:
-        b = p.chromium.launch(headless=True, args=[
+        # CHROMIUM_PATH: use an already installed Chromium when Playwright's own download is not available
+        b = p.chromium.launch(headless=True, executable_path=os.environ.get("CHROMIUM_PATH") or None, args=[
             "--use-fake-ui-for-media-stream",
             "--use-fake-device-for-media-stream",
             f"--use-file-for-fake-video-capture={FAKE_CAM}",

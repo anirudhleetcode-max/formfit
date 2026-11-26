@@ -5,9 +5,11 @@ import ExercisePicker from "../components/ExercisePicker";
 import { EMPTY_HUD, Stage, type HudState } from "../components/Stage";
 import { useSpeech } from "../hooks/useSpeech";
 import { api } from "../lib/api";
+import { DARK_LUMA, meanLuminance } from "../lib/lighting";
 import { detect, drawSkeleton, getLandmarker, type Delegate } from "../lib/pose-runtime";
 import type { Session } from "../lib/types";
 import { PoseSession } from "../pose/engine";
+import { DEFAULT_GATE_TAU, ExerciseRecognizer, loadExerciseModel } from "../pose/exercise";
 import { EXERCISES, type ExerciseId } from "../pose/rules";
 
 type Phase = "off" | "starting" | "ready" | "active" | "saving";
@@ -35,6 +37,8 @@ export default function Train() {
   const hudTick = useRef(0);
   const lastVideoTime = useRef(-1);
   const cueAt = useRef(0);
+  const lumaAt = useRef(0);
+  const dark = useRef(false);
 
   const [exercise, setExercise] = useState<ExerciseId>("squat");
   const [phase, setPhase] = useState<Phase>("off");
@@ -68,6 +72,11 @@ export default function Train() {
         stats.frames += 1;
         if (lms) stats.poseFrames += 1;
 
+        if (now - lumaAt.current > 1000) {  // brightness check once a second
+          lumaAt.current = now;
+          const l = meanLuminance(video);
+          if (l !== null) dark.current = l < DARK_LUMA;
+        }
         const eng = engineRef.current;
         const out = eng ? eng.process(lms, now / 1000, video.videoWidth / Math.max(1, video.videoHeight)) : null;
         drawSkeleton(canvas.getContext("2d")!, lms, new Set(out?.badJoints ?? []));
@@ -89,6 +98,9 @@ export default function Train() {
             message: out?.message ?? (lms ? null : "Looking for you"),
             confidence: out ? out.confidence : lms ? h.confidence : 0,
             lowConfidence: out ? out.lowConfidence : false,
+            seen: out?.recognized ?? h.seen,
+            dark: dark.current,
+            vetoed: eng?.vetoedReps ?? 0,
           }));
         }
       }
@@ -133,7 +145,10 @@ export default function Train() {
     try {
       const s = await api<Session>("/api/sessions", { method: "POST", json: { exercise, source: "live" } });
       sessionIdRef.current = s.id;
-      engineRef.current = new PoseSession(exercise);
+      const tcn = await loadExerciseModel();
+      engineRef.current = new PoseSession(exercise, {
+        guard: true, recognizer: tcn ? new ExerciseRecognizer(tcn) : null, gateTau: DEFAULT_GATE_TAU,
+      });
       startRef.current = performance.now();
       cueAt.current = performance.now();
       setHud((h) => ({ ...h, setReps: 0, set: 1, totalReps: 0, last: null, cue: "Get in position" }));
@@ -216,7 +231,13 @@ export default function Train() {
       </div>
       {error && <p className="alert" role="alert">{error}</p>}
 
-      <Stage
+      <Stage exercise={exercise}
+        onAcceptVetoed={() => {
+          const eng = engineRef.current;
+          if (!eng) return;
+          eng.acceptVetoed();
+          setHud((h) => ({ ...h, setReps: eng.setReps, totalReps: eng.reps.length, vetoed: 0 }));
+        }}
         videoRef={videoRef}
         canvasRef={canvasRef}
         mirrored

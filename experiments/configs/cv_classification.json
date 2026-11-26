@@ -1,0 +1,7 @@
+{
+  "name": "cv_classification",
+  "task": "cv_classification",
+  "description": "Exercise classification on synthetic 3-D skeleton sequences: single-frame pose model vs window statistics vs temporal CNN; standard, hard, 1-second and cross-view protocols.",
+  "datasets": "python -m cv.dataset (train 2000/101, val 400/202, test 800/303, test_hard 600/505 with --occlusion-p 0.7 --noise 0.012 0.025, sweep --per-cell 15/404)",
+  "tcn_steps": 2500
+}

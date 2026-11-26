@@ -1,0 +1,339 @@
+{
+  "dataset": {
+    "name": "formfit-real-clips",
+    "synthetic": false,
+    "manifest_version": 2,
+    "manifest_sha256": "aea86a9ee139ddf5459658f0a3169607104dcd65d4047bb05376e8e06d54953a",
+    "n_clips_listed": 11
+  },
+  "analysis_fps": 15.0,
+  "overall": {
+    "n_clips": 11,
+    "gt_reps_total": 217,
+    "pred_reps_total": 172,
+    "mae": 4.273,
+    "mean_signed_error": -4.091,
+    "exact_match_rate": 0.455,
+    "within_1_rate": 0.727,
+    "relative_count_error": 0.217,
+    "scored_share_of_predicted": 0.884
+  },
+  "per_exercise": {
+    "curl": {
+      "n_clips": 1,
+      "gt_reps_total": 24,
+      "pred_reps_total": 25,
+      "mae": 1.0,
+      "mean_signed_error": 1.0,
+      "exact_match_rate": 0.0,
+      "within_1_rate": 1.0,
+      "relative_count_error": 0.042,
+      "scored_share_of_predicted": 0.8
+    },
+    "lunge": {
+      "n_clips": 2,
+      "gt_reps_total": 70,
+      "pred_reps_total": 67,
+      "mae": 1.5,
+      "mean_signed_error": -1.5,
+      "exact_match_rate": 0.0,
+      "within_1_rate": 0.5,
+      "relative_count_error": 0.043,
+      "scored_share_of_predicted": 0.776
+    },
+    "pushup": {
+      "n_clips": 3,
+      "gt_reps_total": 37,
+      "pred_reps_total": 37,
+      "mae": 0.0,
+      "mean_signed_error": 0.0,
+      "exact_match_rate": 1.0,
+      "within_1_rate": 1.0,
+      "relative_count_error": 0.0,
+      "scored_share_of_predicted": 1.0
+    },
+    "squat": {
+      "n_clips": 5,
+      "gt_reps_total": 86,
+      "pred_reps_total": 43,
+      "mae": 8.6,
+      "mean_signed_error": -8.6,
+      "exact_match_rate": 0.4,
+      "within_1_rate": 0.6,
+      "relative_count_error": 0.5,
+      "scored_share_of_predicted": 1.0
+    }
+  },
+  "per_source_type": {
+    "filmed": {
+      "n_clips": 6,
+      "gt_reps_total": 105,
+      "pred_reps_total": 66,
+      "mae": 6.833,
+      "mean_signed_error": -6.5,
+      "exact_match_rate": 0.667,
+      "within_1_rate": 0.833,
+      "relative_count_error": 0.39,
+      "scored_share_of_predicted": 0.924
+    },
+    "rendered": {
+      "n_clips": 5,
+      "gt_reps_total": 112,
+      "pred_reps_total": 106,
+      "mae": 1.2,
+      "mean_signed_error": -1.2,
+      "exact_match_rate": 0.2,
+      "within_1_rate": 0.6,
+      "relative_count_error": 0.054,
+      "scored_share_of_predicted": 0.858
+    }
+  },
+  "hand_verified_only": {
+    "n_clips": 5,
+    "gt_reps_total": 66,
+    "pred_reps_total": 62,
+    "mae": 0.8,
+    "mean_signed_error": -0.8,
+    "exact_match_rate": 0.4,
+    "within_1_rate": 0.8,
+    "relative_count_error": 0.061,
+    "scored_share_of_predicted": 0.935
+  },
+  "model_on_real_reps": {
+    "reps": 172,
+    "status_counts": {
+      "ok": 82,
+      "uncertain": 59,
+      "not_scored": 20,
+      "out_of_distribution": 11
+    },
+    "ood_features": {
+      "torso_sway": 10,
+      "hip_line_min": 9,
+      "min_angle": 1
+    },
+    "note": "Real reps scored by the classifier trained on SYNTHETIC data; no fault labels, so no accuracy."
+  },
+  "clips": [
+    {
+      "id": "squat_fitnessscape_back",
+      "exercise": "squat",
+      "view": "rear-oblique",
+      "gt_reps": 4,
+      "pred_reps": 4,
+      "scored_reps": 4,
+      "mean_frame_confidence": 0.91,
+      "frames": 213,
+      "frames_with_pose": 213,
+      "model_status_counts": {
+        "ok": 2,
+        "uncertain": 2
+      },
+      "source_type": "filmed",
+      "conditions": [],
+      "gt_verified_by_hand": true,
+      "status": "ok"
+    },
+    {
+      "id": "pub_squat_129",
+      "exercise": "squat",
+      "view": "front",
+      "gt_reps": 15,
+      "pred_reps": 14,
+      "scored_reps": 14,
+      "mean_frame_confidence": 0.95,
+      "frames": 526,
+      "frames_with_pose": 526,
+      "model_status_counts": {
+        "ok": 14
+      },
+      "source_type": "rendered",
+      "conditions": [],
+      "gt_verified_by_hand": true,
+      "status": "ok"
+    },
+    {
+      "id": "pub_squat_130",
+      "exercise": "squat",
+      "view": "front",
+      "gt_reps": 12,
+      "pred_reps": 10,
+      "scored_reps": 10,
+      "mean_frame_confidence": 0.95,
+      "frames": 451,
+      "frames_with_pose": 451,
+      "model_status_counts": {
+        "ok": 10
+      },
+      "source_type": "rendered",
+      "conditions": [],
+      "gt_verified_by_hand": true,
+      "status": "ok"
+    },
+    {
+      "id": "pub_squat_135",
+      "exercise": "squat",
+      "view": "front",
+      "gt_reps": 15,
+      "pred_reps": 15,
+      "scored_reps": 15,
+      "mean_frame_confidence": 0.95,
+      "frames": 481,
+      "frames_with_pose": 481,
+      "model_status_counts": {
+        "ok": 15
+      },
+      "source_type": "rendered",
+      "conditions": [],
+      "gt_verified_by_hand": true,
+      "status": "ok"
+    },
+    {
+      "id": "pub_lunge_134",
+      "exercise": "lunge",
+      "view": "side",
+      "gt_reps": 20,
+      "pred_reps": 19,
+      "scored_reps": 15,
+      "mean_frame_confidence": 0.59,
+      "frames": 661,
+      "frames_with_pose": 661,
+      "model_status_counts": {
+        "uncertain": 15,
+        "not_scored": 4
+      },
+      "source_type": "rendered",
+      "conditions": [
+        "alternating legs"
+      ],
+      "gt_verified_by_hand": true,
+      "status": "ok"
+    },
+    {
+      "id": "pub_lunge_008",
+      "exercise": "lunge",
+      "view": "side",
+      "gt_reps": 50,
+      "pred_reps": 48,
+      "scored_reps": 37,
+      "mean_frame_confidence": 0.6,
+      "frames": 1621,
+      "frames_with_pose": 1621,
+      "model_status_counts": {
+        "uncertain": 37,
+        "not_scored": 11
+      },
+      "source_type": "rendered",
+      "conditions": [
+        "alternating legs",
+        "long clip (108 s)"
+      ],
+      "gt_verified_by_hand": false,
+      "status": "ok"
+    },
+    {
+      "id": "pub_curl_085",
+      "exercise": "curl",
+      "view": "front",
+      "gt_reps": 24,
+      "pred_reps": 25,
+      "scored_reps": 20,
+      "mean_frame_confidence": 0.75,
+      "frames": 631,
+      "frames_with_pose": 631,
+      "model_status_counts": {
+        "not_scored": 5,
+        "uncertain": 5,
+        "ok": 15
+      },
+      "source_type": "filmed",
+      "conditions": [
+        "kneeling",
+        "no weights, arms held out to the sides (variant)"
+      ],
+      "gt_verified_by_hand": false,
+      "status": "ok"
+    },
+    {
+      "id": "pub_pushup_098",
+      "exercise": "pushup",
+      "view": "side",
+      "gt_reps": 12,
+      "pred_reps": 12,
+      "scored_reps": 12,
+      "mean_frame_confidence": 0.92,
+      "frames": 481,
+      "frames_with_pose": 481,
+      "model_status_counts": {
+        "ok": 12
+      },
+      "source_type": "filmed",
+      "conditions": [
+        "knee push-ups"
+      ],
+      "gt_verified_by_hand": false,
+      "status": "ok"
+    },
+    {
+      "id": "pub_pushup_088",
+      "exercise": "pushup",
+      "view": "oblique",
+      "gt_reps": 11,
+      "pred_reps": 11,
+      "scored_reps": 11,
+      "mean_frame_confidence": 0.95,
+      "frames": 631,
+      "frames_with_pose": 631,
+      "model_status_counts": {
+        "out_of_distribution": 11
+      },
+      "source_type": "filmed",
+      "conditions": [
+        "box push-ups (from the knees)"
+      ],
+      "gt_verified_by_hand": false,
+      "status": "ok"
+    },
+    {
+      "id": "pub_pushup_046",
+      "exercise": "pushup",
+      "view": "side",
+      "gt_reps": 14,
+      "pred_reps": 14,
+      "scored_reps": 14,
+      "mean_frame_confidence": 0.93,
+      "frames": 931,
+      "frames_with_pose": 931,
+      "model_status_counts": {
+        "ok": 14
+      },
+      "source_type": "filmed",
+      "conditions": [
+        "push-up + toe tap (variant)",
+        "second person in an inset video"
+      ],
+      "gt_verified_by_hand": false,
+      "status": "ok"
+    },
+    {
+      "id": "pub_squat_042",
+      "exercise": "squat",
+      "view": "front",
+      "gt_reps": 40,
+      "pred_reps": 0,
+      "scored_reps": 0,
+      "mean_frame_confidence": 0.99,
+      "frames": 946,
+      "frames_with_pose": 946,
+      "model_status_counts": {},
+      "source_type": "filmed",
+      "conditions": [
+        "drop squats: feet jump/step in and out (variant)",
+        "second person in an inset video"
+      ],
+      "gt_verified_by_hand": false,
+      "status": "ok"
+    }
+  ],
+  "note": "Tiny sample: 1 Wikimedia Commons clip + 10 PushUpBench clips (5 filmed people, 5 rendered 3D avatars). Ground truth per manifest gt_method."
+}

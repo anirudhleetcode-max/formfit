@@ -1,0 +1,1400 @@
+{
+ "window_frames": 30,
+ "fps": 15,
+ "classes": [
+  "squat",
+  "pushup",
+  "curl",
+  "press",
+  "lunge",
+  "other"
+ ],
+ "train_seconds": {
+  "frame": 53.2,
+  "stats": 23.9,
+  "tcn": 50.1
+ },
+ "n_train_sequences": 4000,
+ "n_test_windows": 17000,
+ "standard_test": {
+  "frame (pose-based)": {
+   "macro_f1": 0.9869,
+   "accuracy": 0.9879,
+   "per_class": {
+    "squat": {
+     "precision": 0.996,
+     "recall": 0.983,
+     "f1": 0.989,
+     "support": 2857
+    },
+    "pushup": {
+     "precision": 1.0,
+     "recall": 0.999,
+     "f1": 1.0,
+     "support": 2543
+    },
+    "curl": {
+     "precision": 0.971,
+     "recall": 0.988,
+     "f1": 0.98,
+     "support": 3508
+    },
+    "press": {
+     "precision": 0.997,
+     "recall": 0.999,
+     "f1": 0.998,
+     "support": 2905
+    },
+    "lunge": {
+     "precision": 0.997,
+     "recall": 0.996,
+     "f1": 0.997,
+     "support": 3091
+    },
+    "other": {
+     "precision": 0.965,
+     "recall": 0.951,
+     "f1": 0.958,
+     "support": 2096
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      2809,
+      0,
+      2,
+      9,
+      8,
+      29
+     ],
+     [
+      0,
+      2541,
+      0,
+      0,
+      0,
+      2
+     ],
+     [
+      4,
+      0,
+      3467,
+      1,
+      1,
+      35
+     ],
+     [
+      0,
+      0,
+      0,
+      2903,
+      0,
+      2
+     ],
+     [
+      6,
+      0,
+      0,
+      0,
+      3080,
+      5
+     ],
+     [
+      2,
+      0,
+      100,
+      0,
+      0,
+      1994
+     ]
+    ]
+   }
+  },
+  "stats (window features)": {
+   "macro_f1": 0.9949,
+   "accuracy": 0.9952,
+   "per_class": {
+    "squat": {
+     "precision": 0.999,
+     "recall": 0.988,
+     "f1": 0.993,
+     "support": 2857
+    },
+    "pushup": {
+     "precision": 1.0,
+     "recall": 0.999,
+     "f1": 1.0,
+     "support": 2543
+    },
+    "curl": {
+     "precision": 0.996,
+     "recall": 0.993,
+     "f1": 0.995,
+     "support": 3508
+    },
+    "press": {
+     "precision": 0.996,
+     "recall": 1.0,
+     "f1": 0.998,
+     "support": 2905
+    },
+    "lunge": {
+     "precision": 0.996,
+     "recall": 0.998,
+     "f1": 0.997,
+     "support": 3091
+    },
+    "other": {
+     "precision": 0.981,
+     "recall": 0.993,
+     "f1": 0.987,
+     "support": 2096
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      2822,
+      0,
+      4,
+      6,
+      7,
+      18
+     ],
+     [
+      0,
+      2541,
+      0,
+      0,
+      2,
+      0
+     ],
+     [
+      0,
+      0,
+      3485,
+      5,
+      0,
+      18
+     ],
+     [
+      1,
+      0,
+      0,
+      2904,
+      0,
+      0
+     ],
+     [
+      2,
+      0,
+      0,
+      0,
+      3085,
+      4
+     ],
+     [
+      1,
+      0,
+      9,
+      1,
+      3,
+      2082
+     ]
+    ]
+   }
+  },
+  "tcn (temporal)": {
+   "macro_f1": 0.9933,
+   "accuracy": 0.9935,
+   "per_class": {
+    "squat": {
+     "precision": 0.995,
+     "recall": 0.991,
+     "f1": 0.993,
+     "support": 2857
+    },
+    "pushup": {
+     "precision": 1.0,
+     "recall": 0.998,
+     "f1": 0.999,
+     "support": 2543
+    },
+    "curl": {
+     "precision": 0.993,
+     "recall": 0.988,
+     "f1": 0.99,
+     "support": 3508
+    },
+    "press": {
+     "precision": 0.998,
+     "recall": 0.999,
+     "f1": 0.999,
+     "support": 2905
+    },
+    "lunge": {
+     "precision": 0.994,
+     "recall": 0.997,
+     "f1": 0.995,
+     "support": 3091
+    },
+    "other": {
+     "precision": 0.978,
+     "recall": 0.989,
+     "f1": 0.983,
+     "support": 2096
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      2830,
+      0,
+      5,
+      1,
+      11,
+      10
+     ],
+     [
+      0,
+      2538,
+      0,
+      0,
+      4,
+      1
+     ],
+     [
+      5,
+      0,
+      3466,
+      2,
+      3,
+      32
+     ],
+     [
+      0,
+      0,
+      1,
+      2902,
+      1,
+      1
+     ],
+     [
+      6,
+      0,
+      0,
+      1,
+      3082,
+      2
+     ],
+     [
+      3,
+      0,
+      19,
+      1,
+      1,
+      2072
+     ]
+    ]
+   }
+  }
+ },
+ "hard_test": {
+  "frame (pose-based)": {
+   "macro_f1": 0.9671,
+   "accuracy": 0.9672,
+   "per_class": {
+    "squat": {
+     "precision": 0.981,
+     "recall": 0.961,
+     "f1": 0.971,
+     "support": 1952
+    },
+    "pushup": {
+     "precision": 1.0,
+     "recall": 0.998,
+     "f1": 0.999,
+     "support": 2463
+    },
+    "curl": {
+     "precision": 0.988,
+     "recall": 0.903,
+     "f1": 0.943,
+     "support": 2651
+    },
+    "press": {
+     "precision": 0.993,
+     "recall": 0.997,
+     "f1": 0.995,
+     "support": 2037
+    },
+    "lunge": {
+     "precision": 0.993,
+     "recall": 0.977,
+     "f1": 0.985,
+     "support": 1728
+    },
+    "other": {
+     "precision": 0.845,
+     "recall": 0.984,
+     "f1": 0.909,
+     "support": 1778
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      1876,
+      0,
+      4,
+      2,
+      5,
+      65
+     ],
+     [
+      2,
+      2459,
+      0,
+      0,
+      2,
+      0
+     ],
+     [
+      6,
+      0,
+      2393,
+      2,
+      4,
+      246
+     ],
+     [
+      5,
+      0,
+      0,
+      2031,
+      1,
+      0
+     ],
+     [
+      21,
+      0,
+      5,
+      3,
+      1688,
+      11
+     ],
+     [
+      2,
+      0,
+      20,
+      7,
+      0,
+      1749
+     ]
+    ]
+   }
+  },
+  "stats (window features)": {
+   "macro_f1": 0.9181,
+   "accuracy": 0.9162,
+   "per_class": {
+    "squat": {
+     "precision": 0.961,
+     "recall": 0.902,
+     "f1": 0.931,
+     "support": 1952
+    },
+    "pushup": {
+     "precision": 0.998,
+     "recall": 0.976,
+     "f1": 0.987,
+     "support": 2463
+    },
+    "curl": {
+     "precision": 0.988,
+     "recall": 0.753,
+     "f1": 0.854,
+     "support": 2651
+    },
+    "press": {
+     "precision": 0.976,
+     "recall": 0.998,
+     "f1": 0.987,
+     "support": 2037
+    },
+    "lunge": {
+     "precision": 0.978,
+     "recall": 0.933,
+     "f1": 0.955,
+     "support": 1728
+    },
+    "other": {
+     "precision": 0.668,
+     "recall": 0.983,
+     "f1": 0.795,
+     "support": 1778
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      1761,
+      2,
+      8,
+      25,
+      14,
+      142
+     ],
+     [
+      0,
+      2404,
+      0,
+      0,
+      20,
+      39
+     ],
+     [
+      14,
+      0,
+      1995,
+      1,
+      2,
+      639
+     ],
+     [
+      3,
+      0,
+      0,
+      2033,
+      0,
+      1
+     ],
+     [
+      42,
+      2,
+      6,
+      19,
+      1612,
+      47
+     ],
+     [
+      13,
+      0,
+      11,
+      6,
+      1,
+      1747
+     ]
+    ]
+   }
+  },
+  "tcn (temporal)": {
+   "macro_f1": 0.9721,
+   "accuracy": 0.973,
+   "per_class": {
+    "squat": {
+     "precision": 0.956,
+     "recall": 0.974,
+     "f1": 0.965,
+     "support": 1952
+    },
+    "pushup": {
+     "precision": 1.0,
+     "recall": 0.997,
+     "f1": 0.998,
+     "support": 2463
+    },
+    "curl": {
+     "precision": 0.971,
+     "recall": 0.952,
+     "f1": 0.961,
+     "support": 2651
+    },
+    "press": {
+     "precision": 0.992,
+     "recall": 0.987,
+     "f1": 0.989,
+     "support": 2037
+    },
+    "lunge": {
+     "precision": 0.983,
+     "recall": 0.988,
+     "f1": 0.985,
+     "support": 1728
+    },
+    "other": {
+     "precision": 0.928,
+     "recall": 0.939,
+     "f1": 0.933,
+     "support": 1778
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      1902,
+      0,
+      8,
+      3,
+      15,
+      24
+     ],
+     [
+      0,
+      2455,
+      0,
+      0,
+      3,
+      5
+     ],
+     [
+      26,
+      0,
+      2523,
+      4,
+      3,
+      95
+     ],
+     [
+      19,
+      0,
+      1,
+      2011,
+      4,
+      2
+     ],
+     [
+      7,
+      1,
+      4,
+      5,
+      1707,
+      4
+     ],
+     [
+      36,
+      0,
+      62,
+      5,
+      5,
+      1670
+     ]
+    ]
+   }
+  }
+ },
+ "short_1s_test": {
+  "frame (pose-based)": {
+   "macro_f1": 0.9822,
+   "accuracy": 0.9835,
+   "per_class": {
+    "squat": {
+     "precision": 0.993,
+     "recall": 0.98,
+     "f1": 0.987,
+     "support": 2857
+    },
+    "pushup": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 2543
+    },
+    "curl": {
+     "precision": 0.967,
+     "recall": 0.977,
+     "f1": 0.972,
+     "support": 3508
+    },
+    "press": {
+     "precision": 0.994,
+     "recall": 0.999,
+     "f1": 0.997,
+     "support": 2905
+    },
+    "lunge": {
+     "precision": 0.995,
+     "recall": 0.995,
+     "f1": 0.995,
+     "support": 3091
+    },
+    "other": {
+     "precision": 0.945,
+     "recall": 0.94,
+     "f1": 0.943,
+     "support": 2096
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      2801,
+      0,
+      3,
+      7,
+      11,
+      35
+     ],
+     [
+      0,
+      2542,
+      0,
+      0,
+      0,
+      1
+     ],
+     [
+      6,
+      0,
+      3429,
+      2,
+      2,
+      69
+     ],
+     [
+      0,
+      0,
+      0,
+      2902,
+      1,
+      2
+     ],
+     [
+      8,
+      0,
+      0,
+      1,
+      3075,
+      7
+     ],
+     [
+      5,
+      0,
+      114,
+      7,
+      0,
+      1970
+     ]
+    ]
+   }
+  },
+  "stats (window features)": {
+   "macro_f1": 0.9533,
+   "accuracy": 0.9554,
+   "per_class": {
+    "squat": {
+     "precision": 0.969,
+     "recall": 0.976,
+     "f1": 0.973,
+     "support": 2857
+    },
+    "pushup": {
+     "precision": 0.99,
+     "recall": 1.0,
+     "f1": 0.995,
+     "support": 2543
+    },
+    "curl": {
+     "precision": 0.985,
+     "recall": 0.856,
+     "f1": 0.916,
+     "support": 3508
+    },
+    "press": {
+     "precision": 0.981,
+     "recall": 0.99,
+     "f1": 0.985,
+     "support": 2905
+    },
+    "lunge": {
+     "precision": 0.977,
+     "recall": 0.997,
+     "f1": 0.987,
+     "support": 3091
+    },
+    "other": {
+     "precision": 0.806,
+     "recall": 0.932,
+     "f1": 0.864,
+     "support": 2096
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      2788,
+      1,
+      2,
+      4,
+      44,
+      18
+     ],
+     [
+      0,
+      2542,
+      0,
+      0,
+      1,
+      0
+     ],
+     [
+      36,
+      2,
+      3003,
+      5,
+      9,
+      453
+     ],
+     [
+      23,
+      0,
+      1,
+      2875,
+      6,
+      0
+     ],
+     [
+      6,
+      3,
+      1,
+      0,
+      3081,
+      0
+     ],
+     [
+      23,
+      20,
+      41,
+      47,
+      12,
+      1953
+     ]
+    ]
+   }
+  },
+  "tcn (temporal)": {
+   "macro_f1": 0.9539,
+   "accuracy": 0.9555,
+   "per_class": {
+    "squat": {
+     "precision": 0.983,
+     "recall": 0.96,
+     "f1": 0.971,
+     "support": 2857
+    },
+    "pushup": {
+     "precision": 1.0,
+     "recall": 0.998,
+     "f1": 0.999,
+     "support": 2543
+    },
+    "curl": {
+     "precision": 0.982,
+     "recall": 0.853,
+     "f1": 0.913,
+     "support": 3508
+    },
+    "press": {
+     "precision": 0.983,
+     "recall": 0.997,
+     "f1": 0.99,
+     "support": 2905
+    },
+    "lunge": {
+     "precision": 0.98,
+     "recall": 0.994,
+     "f1": 0.987,
+     "support": 3091
+    },
+    "other": {
+     "precision": 0.788,
+     "recall": 0.955,
+     "f1": 0.864,
+     "support": 2096
+    }
+   },
+   "confusion": {
+    "labels": [
+     "squat",
+     "pushup",
+     "curl",
+     "press",
+     "lunge",
+     "other"
+    ],
+    "matrix": [
+     [
+      2742,
+      0,
+      22,
+      4,
+      45,
+      44
+     ],
+     [
+      0,
+      2539,
+      0,
+      0,
+      3,
+      1
+     ],
+     [
+      14,
+      0,
+      2991,
+      11,
+      8,
+      484
+     ],
+     [
+      2,
+      0,
+      1,
+      2896,
+      4,
+      2
+     ],
+     [
+      8,
+      1,
+      1,
+      1,
+      3073,
+      7
+     ],
+     [
+      24,
+      0,
+      32,
+      34,
+      4,
+      2002
+     ]
+    ]
+   }
+  }
+ },
+ "by_view_macro_f1": {
+  "front": {
+   "frame (pose-based)": 0.9821,
+   "stats (window features)": 0.9868,
+   "tcn (temporal)": 0.9895
+  },
+  "oblique": {
+   "frame (pose-based)": 0.9915,
+   "stats (window features)": 0.9983,
+   "tcn (temporal)": 0.9958
+  },
+  "side": {
+   "frame (pose-based)": 0.9803,
+   "stats (window features)": 0.9956,
+   "tcn (temporal)": 0.9925
+  },
+  "rear-oblique": {
+   "frame (pose-based)": 0.9924,
+   "stats (window features)": 0.9969,
+   "tcn (temporal)": 0.9963
+  },
+  "rear": {
+   "frame (pose-based)": 0.9897,
+   "stats (window features)": 0.9939,
+   "tcn (temporal)": 0.9895
+  }
+ },
+ "sweep_accuracy_by_yaw": {
+  "0": {
+   "frame (pose-based)": 0.9879,
+   "stats (window features)": 0.994,
+   "tcn (temporal)": 0.9909
+  },
+  "45": {
+   "frame (pose-based)": 1.0,
+   "stats (window features)": 0.9994,
+   "tcn (temporal)": 1.0
+  },
+  "90": {
+   "frame (pose-based)": 1.0,
+   "stats (window features)": 0.9989,
+   "tcn (temporal)": 0.9966
+  },
+  "135": {
+   "frame (pose-based)": 0.9983,
+   "stats (window features)": 1.0,
+   "tcn (temporal)": 0.9983
+  },
+  "180": {
+   "frame (pose-based)": 0.9883,
+   "stats (window features)": 0.9871,
+   "tcn (temporal)": 0.9855
+  },
+  "225": {
+   "frame (pose-based)": 1.0,
+   "stats (window features)": 0.9989,
+   "tcn (temporal)": 0.9978
+  },
+  "270": {
+   "frame (pose-based)": 0.9989,
+   "stats (window features)": 0.9989,
+   "tcn (temporal)": 0.9995
+  },
+  "315": {
+   "frame (pose-based)": 0.9967,
+   "stats (window features)": 0.9978,
+   "tcn (temporal)": 0.9989
+  }
+ },
+ "sequence_accuracy": {
+  "frame (pose-based)": 0.9888,
+  "stats (window features)": 0.9988,
+  "tcn (temporal)": 1.0
+ },
+ "cross_view": {
+  "train_views": [
+   "oblique",
+   "rear-oblique",
+   "side"
+  ],
+  "test_views": [
+   "front",
+   "rear"
+  ],
+  "n_train_sequences": 3058,
+  "n_test_windows": 4646,
+  "results": {
+   "frame (pose-based)": {
+    "macro_f1": 0.8211,
+    "accuracy": 0.8366,
+    "per_class": {
+     "squat": {
+      "precision": 0.813,
+      "recall": 0.903,
+      "f1": 0.856,
+      "support": 1018
+     },
+     "pushup": {
+      "precision": 1.0,
+      "recall": 0.594,
+      "f1": 0.745,
+      "support": 648
+     },
+     "curl": {
+      "precision": 0.906,
+      "recall": 0.921,
+      "f1": 0.913,
+      "support": 888
+     },
+     "press": {
+      "precision": 0.993,
+      "recall": 1.0,
+      "f1": 0.996,
+      "support": 805
+     },
+     "lunge": {
+      "precision": 0.938,
+      "recall": 0.552,
+      "f1": 0.695,
+      "support": 710
+     },
+     "other": {
+      "precision": 0.569,
+      "recall": 0.984,
+      "f1": 0.721,
+      "support": 577
+     }
+    },
+    "confusion": {
+     "labels": [
+      "squat",
+      "pushup",
+      "curl",
+      "press",
+      "lunge",
+      "other"
+     ],
+     "matrix": [
+      [
+       919,
+       0,
+       5,
+       4,
+       20,
+       70
+      ],
+      [
+       0,
+       385,
+       0,
+       0,
+       5,
+       258
+      ],
+      [
+       0,
+       0,
+       818,
+       1,
+       0,
+       69
+      ],
+      [
+       0,
+       0,
+       0,
+       805,
+       0,
+       0
+      ],
+      [
+       209,
+       0,
+       74,
+       1,
+       392,
+       34
+      ],
+      [
+       2,
+       0,
+       6,
+       0,
+       1,
+       568
+      ]
+     ]
+    }
+   },
+   "stats (window features)": {
+    "macro_f1": 0.9401,
+    "accuracy": 0.943,
+    "per_class": {
+     "squat": {
+      "precision": 0.998,
+      "recall": 0.865,
+      "f1": 0.927,
+      "support": 1018
+     },
+     "pushup": {
+      "precision": 1.0,
+      "recall": 0.864,
+      "f1": 0.927,
+      "support": 648
+     },
+     "curl": {
+      "precision": 0.975,
+      "recall": 0.983,
+      "f1": 0.979,
+      "support": 888
+     },
+     "press": {
+      "precision": 0.958,
+      "recall": 1.0,
+      "f1": 0.979,
+      "support": 805
+     },
+     "lunge": {
+      "precision": 0.924,
+      "recall": 0.97,
+      "f1": 0.946,
+      "support": 710
+     },
+     "other": {
+      "precision": 0.794,
+      "recall": 0.993,
+      "f1": 0.882,
+      "support": 577
+     }
+    },
+    "confusion": {
+     "labels": [
+      "squat",
+      "pushup",
+      "curl",
+      "press",
+      "lunge",
+      "other"
+     ],
+     "matrix": [
+      [
+       881,
+       0,
+       16,
+       27,
+       10,
+       84
+      ],
+      [
+       0,
+       560,
+       2,
+       0,
+       47,
+       39
+      ],
+      [
+       0,
+       0,
+       873,
+       4,
+       0,
+       11
+      ],
+      [
+       0,
+       0,
+       0,
+       805,
+       0,
+       0
+      ],
+      [
+       2,
+       0,
+       0,
+       4,
+       689,
+       15
+      ],
+      [
+       0,
+       0,
+       4,
+       0,
+       0,
+       573
+      ]
+     ]
+    }
+   },
+   "tcn (temporal)": {
+    "macro_f1": 0.935,
+    "accuracy": 0.9374,
+    "per_class": {
+     "squat": {
+      "precision": 0.879,
+      "recall": 0.967,
+      "f1": 0.921,
+      "support": 1018
+     },
+     "pushup": {
+      "precision": 1.0,
+      "recall": 0.873,
+      "f1": 0.932,
+      "support": 648
+     },
+     "curl": {
+      "precision": 0.99,
+      "recall": 0.974,
+      "f1": 0.982,
+      "support": 888
+     },
+     "press": {
+      "precision": 0.993,
+      "recall": 0.999,
+      "f1": 0.996,
+      "support": 805
+     },
+     "lunge": {
+      "precision": 0.869,
+      "recall": 0.807,
+      "f1": 0.837,
+      "support": 710
+     },
+     "other": {
+      "precision": 0.911,
+      "recall": 0.976,
+      "f1": 0.942,
+      "support": 577
+     }
+    },
+    "confusion": {
+     "labels": [
+      "squat",
+      "pushup",
+      "curl",
+      "press",
+      "lunge",
+      "other"
+     ],
+     "matrix": [
+      [
+       984,
+       0,
+       2,
+       2,
+       21,
+       9
+      ],
+      [
+       0,
+       566,
+       0,
+       3,
+       65,
+       14
+      ],
+      [
+       2,
+       0,
+       865,
+       1,
+       0,
+       20
+      ],
+      [
+       1,
+       0,
+       0,
+       804,
+       0,
+       0
+      ],
+      [
+       123,
+       0,
+       2,
+       0,
+       573,
+       12
+      ],
+      [
+       9,
+       0,
+       5,
+       0,
+       0,
+       563
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "latency_ms_per_window": {
+  "frame (pose-based)": 16.817,
+  "stats (window features)": 7.034,
+  "tcn (temporal)": 0.135
+ },
+ "tcn": {
+  "params": 31398,
+  "history": [
+   {
+    "step": 250,
+    "loss": 0.1026,
+    "val_macro_f1": 0.9808
+   },
+   {
+    "step": 500,
+    "loss": 0.0556,
+    "val_macro_f1": 0.9812
+   },
+   {
+    "step": 750,
+    "loss": 0.0387,
+    "val_macro_f1": 0.988
+   },
+   {
+    "step": 1000,
+    "loss": 0.0138,
+    "val_macro_f1": 0.99
+   },
+   {
+    "step": 1250,
+    "loss": 0.0127,
+    "val_macro_f1": 0.9898
+   },
+   {
+    "step": 1500,
+    "loss": 0.0279,
+    "val_macro_f1": 0.9918
+   },
+   {
+    "step": 1750,
+    "loss": 0.035,
+    "val_macro_f1": 0.9917
+   },
+   {
+    "step": 2000,
+    "loss": 0.0027,
+    "val_macro_f1": 0.9924
+   },
+   {
+    "step": 2250,
+    "loss": 0.0069,
+    "val_macro_f1": 0.9927
+   },
+   {
+    "step": 2500,
+    "loss": 0.011,
+    "val_macro_f1": 0.9929
+   }
+  ],
+  "artifact": "backend/ml/artifacts/exercise_tcn.npz",
+  "artifact_kb": 116.3
+ }
+}

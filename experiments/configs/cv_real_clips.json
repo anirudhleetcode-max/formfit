@@ -1,0 +1,5 @@
+{
+  "name": "cv_real_clips",
+  "task": "cv_real_clips",
+  "description": "REAL clips: rep counting baseline / +guard / +guard+TCN gate, false reps with the wrong exercise selected, and exercise classification (TCN vs single-frame model) on 2-s windows."
+}

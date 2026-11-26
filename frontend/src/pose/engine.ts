@@ -4,6 +4,8 @@ import { OneEuro, type Point } from "./angles";
 import { FRAME_MIN, JitterMeter, jitterScore, repQuality, visibilityScore, weakestPart } from "./confidence";
 import { CueThrottle } from "./cues";
 import { RepFsm, type FsmState, type RepTiming } from "./fsm";
+import { LandmarkGuard, type GuardOptions } from "./guard";
+import type { ExerciseRecognizer, Recognition } from "./exercise";
 import {
   EXERCISES, FAULT_INFO, NEUTRAL, checkVisibility, evaluateRep, frameMetrics, requiredJoints, toApiFeatures,
   type ExerciseId, type FaultCode, type FrameMetrics, type RepFeatures,
@@ -37,6 +39,16 @@ export type FrameOutput = {
   confidence: number;        // smoothed frame tracking confidence 0..1 (0 when nobody is visible)
   weakest: string | null;    // least visible required body part
   lowConfidence: boolean;    // form feedback suppressed on this frame
+  recognized: Recognition | null; // what the temporal classifier thinks the last 2 s were (if enabled)
+  vetoed: boolean;           // a rep was closed on this frame but not counted (it looked like another movement)
+};
+
+export type SessionOptions = {
+  guard?: Partial<GuardOptions> | boolean;
+  /** temporal exercise classifier (pose/exercise.ts); enables recognition and the false-rep gate */
+  recognizer?: ExerciseRecognizer | null;
+  /** veto a rep when the classifier gives another class at least this probability (0 = never veto) */
+  gateTau?: number;
 };
 
 type Sample = { t: number; conf: number } & FrameMetrics;
@@ -102,9 +114,40 @@ export class PoseSession {
   private confEma = 0;
   private weakest = "body";
 
-  constructor(exercise: ExerciseId) {
+  /** Optional landmark guard (swap repair, implausible-joint rejection, short-gap filling), see guard.ts. */
+  readonly guard: LandmarkGuard | null;
+  readonly recognizer: ExerciseRecognizer | null;
+  gateTau: number;
+  vetoedReps = 0;
+  /** reps the gate did not count (they looked like a different movement) */
+  vetoed: RepResult[] = [];
+  private recognized: Recognition | null = null;
+  private recogFrame = 0;
+
+  constructor(exercise: ExerciseId, opts: SessionOptions = {}) {
     this.exercise = exercise;
     this.fsm = new RepFsm(EXERCISES[exercise].fsm);
+    this.guard = opts.guard === false || opts.guard === undefined ? null
+      : new LandmarkGuard(opts.guard === true ? {} : opts.guard);
+    this.recognizer = opts.recognizer ?? null;
+    this.gateTau = opts.gateTau ?? 0;
+  }
+
+  /** The user says the vetoed reps were real (an unusual variant): count them and stop gating this session. */
+  acceptVetoed(): number {
+    const n = this.vetoed.length;
+    this.gateTau = 0;
+    this.reps = [...this.reps, ...this.vetoed].sort((a, b) => a.t - b.t).map((r, i) => ({ ...r, n: i + 1 }));
+    this.setReps = this.reps.filter((r) => r.set === this.set).length;
+    this.vetoed = [];
+    this.vetoedReps = 0;
+    return n;
+  }
+
+  private recognize(force = false): Recognition | null {
+    if (!this.recognizer) return null;
+    if (force || this.recogFrame++ % 5 === 0) this.recognized = this.recognizer.recognize() ?? this.recognized;
+    return this.recognized;
   }
 
   private smooth(key: string, v: number, t: number): number {
@@ -127,13 +170,15 @@ export class PoseSession {
   /** lms: MediaPipe normalised landmarks; aspect = video width / height. x and y are normalised
    *  by different lengths, so x is rescaled by the aspect ratio before measuring any angle. */
   process(lms: Point[] | null | undefined, t: number, aspect = 1): FrameOutput {
+    this.recognizer?.push(lms, aspect, t);  // the classifier was trained on unguarded landmarks
+    if (this.guard) lms = this.guard.process(lms, t, aspect);
     this.framesSeen += 1;
     if (this.t0 === null) this.t0 = t;
     const def = EXERCISES[this.exercise];
     const base: FrameOutput = {
       visible: false, message: null, badJoints: [], primary: null, state: this.fsm.state,
       setReps: this.setReps, totalReps: this.reps.length, rep: null, cue: null,
-      confidence: 0, weakest: null, lowConfidence: true,
+      confidence: 0, weakest: null, lowConfidence: true, recognized: this.recognize(), vetoed: false,
     };
     if (lms && lms.length >= 33) this.framesWithPose += 1;
     this.frameTimes.push(t);
@@ -194,6 +239,13 @@ export class PoseSession {
     let cue = live.length ? this.cues.offer(FAULT_INFO[live[0].code].cue, t, 2) : null;
 
     const ev = this.fsm.update(t, def.signal(m.primary));
+    let veto = false;
+    if (ev?.type === "rep" && this.gateTau > 0) {
+      const r = this.recognize(true);
+      out.recognized = r;
+      // the counter saw a rep, but the last 2 s look like a different movement: probably a false rep
+      veto = !!r && r.label !== this.exercise && r.p >= this.gateTau;
+    }
     if (ev?.type === "rep") {
       const angleFrom = Math.max(this.lastRepEnd, ev.timing.start - 1.5);
       const features = aggregateRep(this.buf, ev.timing, def.concentricFirst, angleFrom);
@@ -207,19 +259,29 @@ export class PoseSession {
         this.weakest,
       );
       const verdict = q.scored ? evaluateRep(this.exercise, features) : { score: null, faults: [] as FaultCode[] };
-      this.setReps += 1;
       const rep: RepResult = {
         n: this.reps.length + 1, set: this.set, score: verdict.score, faults: verdict.faults,
         confidence: q.confidence, scored: q.scored, abstainReason: q.reason,
         eccS: features.eccS, conS: features.conS, rom: features.rom,
         t: r2(this.elapsed(t)), features,
       };
-      this.reps.push(rep);
-      out.rep = rep;
-      if (!q.scored) cue = this.cues.offer("Rep counted, form not scored", t, 2) ?? cue;
-      else cue = verdict.faults.length
-        ? this.cues.offer(FAULT_INFO[verdict.faults[0]].cue, t, 3) ?? cue
-        : (this.setReps % 3 === 0 ? this.cues.offer("Good reps, keep going", t, 1) : null) ?? cue;
+      if (veto) {
+        // kept aside, not lost: acceptVetoed() counts them if the user says this IS the exercise (a variant)
+        this.vetoed.push(rep);
+        this.vetoedReps += 1;
+        out.vetoed = true;
+        cue = this.cues.offer(`That didn't look like a ${def.label.toLowerCase()}, not counted`, t, 3) ?? cue;
+      } else {
+        this.setReps += 1;
+        this.reps.push(rep);
+        out.rep = rep;
+      }
+      if (!veto) {  // no form cue for a rep that was not counted
+        if (!q.scored) cue = this.cues.offer("Rep counted, form not scored", t, 2) ?? cue;
+        else cue = verdict.faults.length
+          ? this.cues.offer(FAULT_INFO[verdict.faults[0]].cue, t, 3) ?? cue
+          : (this.setReps % 3 === 0 ? this.cues.offer("Good reps, keep going", t, 1) : null) ?? cue;
+      }
     } else if (ev?.type === "partial" && !low) {
       const partialCue = { squat: "Go lower", pushup: "Chest to the floor", curl: "Full range, all the way up",
         press: "Press all the way up", lunge: "Drop the back knee" }[this.exercise];

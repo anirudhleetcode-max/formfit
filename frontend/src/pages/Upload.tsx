@@ -7,6 +7,7 @@ import { api } from "../lib/api";
 import { createFileLandmarker, detectAt, drawSkeleton } from "../lib/pose-runtime";
 import type { Session } from "../lib/types";
 import { PoseSession } from "../pose/engine";
+import { DEFAULT_GATE_TAU, ExerciseRecognizer, loadExerciseModel } from "../pose/exercise";
 import { FAULT_INFO, type ExerciseId } from "../pose/rules";
 
 const MAX_MB = 300;
@@ -79,7 +80,10 @@ export default function Upload() {
       if (!Number.isFinite(duration) || duration <= 0) throw new Error("Could not read the video length.");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      const eng = new PoseSession(exercise);
+      const tcn = await loadExerciseModel();
+      const eng = new PoseSession(exercise, {
+        guard: true, recognizer: tcn ? new ExerciseRecognizer(tcn) : null, gateTau: DEFAULT_GATE_TAU,
+      });
       engineRef.current = eng;
       const ctx = canvas.getContext("2d")!;
       let poseFrames = 0, frames = 0, last = null as PoseSession["reps"][number] | null;
@@ -100,6 +104,7 @@ export default function Upload() {
           ...h, setReps: eng.setReps, totalReps: eng.reps.length, last, elapsed: t,
           cue: out.cue ?? h.cue, tracking: out.visible ? "tracking" : "lost", message: out.message,
           confidence: out.confidence, lowConfidence: out.lowConfidence,
+          seen: out.recognized ?? h.seen, vetoed: eng.vetoedReps,
         }));
       }
       setPoseRate(frames ? poseFrames / frames : 0);
@@ -172,7 +177,14 @@ export default function Upload() {
         </div>
       )}
 
-      <Stage
+      <Stage exercise={exercise}
+        onAcceptVetoed={() => {
+          const eng = engineRef.current;
+          if (!eng) return;
+          eng.acceptVetoed();
+          setHud((h) => ({ ...h, setReps: eng.setReps, totalReps: eng.reps.length, vetoed: 0 }));
+          setReps([...eng.reps]);
+        }}
         videoRef={videoRef}
         canvasRef={canvasRef}
         mirrored={false}

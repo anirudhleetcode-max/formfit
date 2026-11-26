@@ -1,0 +1,8 @@
+{
+  "name": "cv_landmarks",
+  "task": "cv_landmarks",
+  "description": "Real-frame landmark experiments on samples/squat_demo.webm: lite/full/heavy agreement and CPU latency, low-light (raw / gain / gamma+CLAHE) and box-occlusion robustness, rep count through the TS engine with the landmark guard off/on.",
+  "seed": 7,
+  "light_levels": [0.5, 0.25, 0.12, 0.06],
+  "save_example_level": 0.12
+}
