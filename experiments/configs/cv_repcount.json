@@ -1,0 +1,6 @@
+{
+  "name": "cv_repcount",
+  "task": "cv_repcount",
+  "description": "Rep counting, false-repetition matrix with/without the temporal-classifier gate, posture precision/recall and camera-yaw sweep, through the app's TypeScript engine on synthetic 3-D skeleton sequences.",
+  "gate_taus": [0.5, 0.6, 0.8, 0.9]
+}

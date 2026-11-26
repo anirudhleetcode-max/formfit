@@ -2,3 +2,5 @@
 -r requirements.txt
 mediapipe>=0.10.14
 opencv-python>=4.9
+# Training the exercise TCN (experiments/cv/classification.py); inference needs only NumPy
+jax[cpu]>=0.4.30

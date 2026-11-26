@@ -26,3 +26,7 @@ Thumbs.db
 # real-clip evaluation downloads and derived landmarks (re-created by experiments/real_clips)
 data/real_clips/cache/
 data/real_clips/landmarks/
+
+# synthetic CV datasets and extra pose models (re-created by backend/cv and experiments/cv)
+data/synthetic/
+data/models/

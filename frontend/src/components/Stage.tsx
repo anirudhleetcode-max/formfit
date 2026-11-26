@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject } from "react";
-import { FAULT_INFO } from "../pose/rules";
+import { EXERCISES, FAULT_INFO, type ExerciseId } from "../pose/rules";
 import type { RepResult } from "../pose/engine";
 import { clock, scoreClass } from "../lib/format";
 import { ConfidenceMeter } from "./Feedback";
@@ -15,6 +15,9 @@ export type HudState = {
   message: string | null;
   confidence: number | null;   // smoothed frame tracking confidence
   lowConfidence: boolean;      // form feedback currently suppressed
+  seen?: { label: string; p: number } | null;  // temporal exercise classifier, last 2 s
+  vetoed?: number;             // reps not counted because they looked like another movement
+  dark?: boolean;              // scene too dark for reliable landmarks (lib/lighting.ts)
 };
 
 export const EMPTY_HUD: HudState = {
@@ -22,7 +25,10 @@ export const EMPTY_HUD: HudState = {
   confidence: null, lowConfidence: false,
 };
 
-export function Stage({ videoRef, canvasRef, mirrored, hud, placeholder, children }: {
+const movementLabel = (c: string) => (c in EXERCISES ? EXERCISES[c as ExerciseId].label : "No exercise");
+
+export function Stage({ videoRef, canvasRef, mirrored, hud, placeholder, children, exercise }: {
+  exercise?: ExerciseId;
   videoRef: RefObject<HTMLVideoElement | null>;
   canvasRef: RefObject<HTMLCanvasElement | null>;
   mirrored: boolean;
@@ -45,6 +51,7 @@ export function Stage({ videoRef, canvasRef, mirrored, hud, placeholder, childre
         <div className={"track-pill t-" + (hud.tracking === "tracking" && hud.lowConfidence ? "weak" : hud.tracking)} data-testid="tracking">
           <i aria-hidden="true" />{statusText}
         </div>
+        {hud.dark && <div className="dark-hint" role="status">Room is dark: add light in front of you</div>}
         {hud.cue && <div className="cue" role="status" aria-live="polite" key={hud.cue}>{hud.cue}</div>}
       </div>
       <aside className="hud" aria-label="Session stats">
@@ -67,6 +74,13 @@ export function Stage({ videoRef, canvasRef, mirrored, hud, placeholder, childre
         <div className="hud-conf">
           <ConfidenceMeter value={hud.tracking === "idle" || hud.tracking === "loading" ? null : hud.confidence} />
         </div>
+        {hud.seen && (
+          <p className={"hud-seen" + (exercise && hud.seen.label !== exercise && hud.seen.p >= 0.6 ? " mismatch" : "")}
+            data-testid="movement">
+            Movement: <b>{movementLabel(hud.seen.label)}</b> {Math.round(hud.seen.p * 100)}%
+            {!!hud.vetoed && <span> · {hud.vetoed} not counted</span>}
+          </p>
+        )}
         <div className="hud-faults" data-testid="last-rep-feedback">
           {last && !last.scored && (
             <span className="abstain-line">Rep counted, form not scored: {last.abstainReason ?? "tracking too weak"}</span>

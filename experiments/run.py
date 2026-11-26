@@ -52,6 +52,15 @@ def main() -> None:
         from experiments.real_clips.parity import run as run_parity
         report = run_parity(cfg, out)
         (out / "metrics.json").write_text(json.dumps(report, indent=2))
+    elif task == "cv_classification":
+        from experiments.cv.classification import run as run_cls
+        report = run_cls(cfg, out)
+    elif task == "cv_repcount":
+        from experiments.cv.repcount import run as run_rep
+        report = run_rep(cfg, out)
+    elif task == "cv_landmarks":
+        from experiments.cv.landmarks import run as run_lm
+        report = run_lm(cfg, out)
     else:
         raise SystemExit(f"unknown task {task}")
     print(f"run {run_id} -> {out.relative_to(ROOT)}")
